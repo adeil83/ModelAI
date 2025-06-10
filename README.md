@@ -3,7 +3,7 @@
 **ModelAI** é um agente de Inteligência Artificial desenvolvido como tutor pedagógico para apoiar professores e estudantes de Física na construção de modelos computacionais utilizando programação com VPython, Web VPython e Python. O projeto está centrado na formação ética, investigativa e conceitual dos futuros docentes, com ênfase na integração crítica da IA no ensino de Física.
 
 🔗 **Acesse o GPT personalizado**: [https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai](https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai)  
-📘 **Livro base**: [Modelagem Computacional com Web VPython (livro gratuito)](https://abre.ai/mRSr)
+📘 **Livro base**: [Modelagem Computacional com Web VPython (livro gratuito)](https://abre.ai/mRSr)  
 📘 **Resolução das atividades propostas no livro Modelagem Computacional com Web VPython**: [Resolução das atividades propostas no livroModelagem Computacional com Web VPython]([https://abre.ai/mRSr](https://abre.ai/mVtA))
 
 ---
