@@ -4,7 +4,6 @@
 
 🔗 **Acesse o GPT personalizado**: [https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai](https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai)  
 📘 **Livro base**: [Modelagem Computacional com Web VPython (livro gratuito)](https://abre.ai/mRSr)
-
 📘 **Resolução das atividades propostas no livro Modelagem Computacional com Web VPython**: [Resolução das atividades propostas no livroModelagem Computacional com Web VPython]([https://abre.ai/mRSr](https://abre.ai/mVtA))
 
 ---
