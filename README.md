@@ -34,7 +34,7 @@ Promover o desenvolvimento do pensamento científico e investigativo por meio da
 - Colisões  
 - Modelagem com Web VPython  
 - Análise de dados experimentais  
-- Competências digitais da BNCC e IA para Educação  
+- Competências digitais da BNCC Computação e IA para Educação  
 
 ---
 
