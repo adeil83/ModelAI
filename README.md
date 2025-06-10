@@ -2,19 +2,19 @@
 
 **ModelAI** é um agente de Inteligência Artificial desenvolvido como tutor pedagógico para apoiar professores e estudantes de Física na construção de modelos computacionais utilizando programação com VPython, Web VPython e Python. O projeto está centrado na formação ética, investigativa e conceitual dos futuros docentes, com ênfase na integração crítica da IA no ensino de Física.
 
-🔗 **Acesse o GPT personalizado**: [https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai](https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai)  
-📘 **Livro base**: [Modelagem Computacional com Web VPython (livro gratuito)](https://abre.ai/mRSr)  
-📘 **Resolução das atividades propostas no livro**: [Resposta do Pratique!](https://abre.ai/mVtA)
+**Acesse o GPT personalizado**: [https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai](https://chatgpt.com/g/g-68379fd886c0819192f4ac47513b8c0a-modelai)  
+**Livro base**: [Modelagem Computacional com Web VPython (livro gratuito)](https://abre.ai/mRSr)  
+**Resolução das atividades propostas no livro**: [Resposta do Pratique!](https://abre.ai/mVtA)
 
 ---
 
-## 🧠 Objetivo central
+## Objetivo central
 
 Promover o desenvolvimento do pensamento científico e investigativo por meio da modelagem computacional e da análise de dados experimentais, com base em uma abordagem socrática, crítica e ética.
 
 ---
 
-## 🎓 Princípios pedagógicos
+## Princípios pedagógicos
 
 - Ativação do conhecimento prévio do estudante.
 - Mediação por meio de perguntas investigativas.
@@ -25,7 +25,7 @@ Promover o desenvolvimento do pensamento científico e investigativo por meio da
 
 ---
 
-## 📚 Áreas de atuação
+## Áreas de atuação
 
 - Queda livre  
 - Movimento Harmônico Simples (MHS)  
@@ -38,7 +38,7 @@ Promover o desenvolvimento do pensamento científico e investigativo por meio da
 
 ---
 
-## 💬 Regras didáticas de interação
+## Regras didáticas de interação
 
 - Iniciar sempre com o que o estudante já sabe.
 - Usar exemplos contextualizados e relevantes.
@@ -49,7 +49,7 @@ Promover o desenvolvimento do pensamento científico e investigativo por meio da
 
 ---
 
-## 🧭 Ambiente de desenvolvimento
+## Ambiente de desenvolvimento
 
 **Instruções para execução dos códigos no GlowScript:**
 
@@ -62,7 +62,7 @@ Promover o desenvolvimento do pensamento científico e investigativo por meio da
 
 ---
 
-## 🔒 Regras éticas do ModelAI
+## Regras éticas do ModelAI
 
 - Não realiza listas ou avaliações no lugar do estudante.
 - Não incentiva cópia ou reprodução automática de respostas.
@@ -71,17 +71,17 @@ Promover o desenvolvimento do pensamento científico e investigativo por meio da
 
 ---
 
-## 📄 Licença
+## Licença
 
 Distribuído sob a Licença MIT. Consulte o arquivo LICENSE para mais detalhes.
 
 ---
 
-## 👤 Autor
+## Autor
 
 **Francisco Adeil Gomes de Araújo**  
 Doutorando em Ensino de Física — RENOEN/IFCE  
-📫 Contato: [francisco.adeil98@aluno.ifce.edu.br](mailto:francisco.adeil98@aluno.ifce.edu.br)
+Contato: [francisco.adeil98@aluno.ifce.edu.br](mailto:francisco.adeil98@aluno.ifce.edu.br)
 
 ---
 
