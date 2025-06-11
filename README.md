@@ -85,5 +85,13 @@ Contato: [francisco.adeil98@aluno.ifce.edu.br](mailto:francisco.adeil98@aluno.if
 
 ---
 
+## Instruções completas do ModelAI
+
+Para consultar a descrição detalhada do comportamento do tutor ModelAI, seus princípios pedagógicos, áreas de atuação, regras didáticas e orientações de uso, acesse:
+
+📄 [`Instrucoes_ModelAI.md`](./Instrucoes_ModelAI.md)
+
+---
+
 > Este projeto integra a pesquisa de doutorado em Ensino de Física sobre o uso ético e pedagógico da Inteligência Artificial na formação inicial de professores.
 
