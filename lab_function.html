@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo dos Parâmetros - Laboratório MAIA</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
+        .header-academico {
+            background-color: #1a73e8; color: white; padding: 20px; text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;
+        }
+        .header-academico h1 { margin: 0; font-size: 1.8em; }
+        .header-academico p { margin: 5px 0 0; font-weight: 300; opacity: 0.9; }
+        .container { max-width: 900px; margin: auto; padding: 0 20px 40px 20px; }
+        .secao { background: white; padding: 25px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #1a73e8; }
+        .secao.linear { border-top-color: #d93025; }
+        
+        /* Centraliza e força o gráfico a ser quadrado */
+        .canvas-wrapper { 
+            max-width: 600px; /* Largura controlada */
+            margin: 0 auto 20px auto; 
+            position: relative;
+        }
+        
+        .controles { display: grid; gap: 15px; background: #f8f9fa; padding: 15px; border-radius: 10px; }
+        .controle-item { display: flex; align-items: center; gap: 10px; }
+        .controle-item label { width: 140px; font-weight: 600; }
+        input[type=range] { flex-grow: 1; }
+        .v-display { width: 50px; text-align: center; font-weight: bold; color: #1a73e8; }
+        .formula-exibida { text-align: center; font-size: 1.4em; font-weight: bold; margin: 15px 0; color: #444; }
+    </style>
+</head>
+<body>
+
+<header class="header-academico">
+    <h1>Laboratório MAIA: Experimentos de Funções</h1>
+    <p>Professor Adeil Araújo | Doutorando: RENOEN/IFCE</p>
+</header>
+
+<div class="container">
+    <div class="secao">
+        <h2>1. Estudo da Função Quadrática</h2>
+        <div class="canvas-wrapper">
+            <canvas id="chartQuad"></canvas>
+        </div>
+        <div class="formula-exibida" id="eqQuad">f(x) = 1.0x² + 0.0x + 0.0</div>
+        <div class="controles">
+            <div class="controle-item"><label>Parâmetro 'a':</label><input type="range" id="qA" min="-5" max="5" step="0.1" value="1"><span id="vQA" class="v-display">1.0</span></div>
+            <div class="controle-item"><label>Parâmetro 'b':</label><input type="range" id="qB" min="-10" max="10" step="0.1" value="0"><span id="vQB" class="v-display">0.0</span></div>
+            <div class="controle-item"><label>Parâmetro 'c':</label><input type="range" id="qC" min="-10" max="10" step="1" value="0"><span id="vQC" class="v-display">0.0</span></div>
+        </div>
+    </div>
+
+    <div class="secao linear">
+        <h2>2. Estudo da Função Linear</h2>
+        <div class="canvas-wrapper">
+            <canvas id="chartLin"></canvas>
+        </div>
+        <div class="formula-exibida" id="eqLin">f(x) = 1.0x + 0.0</div>
+        <div class="controles">
+            <div class="controle-item"><label>Inclinação (m):</label><input type="range" id="lM" min="-10" max="10" step="0.1" value="1"><span id="vLM" class="v-display">1.0</span></div>
+            <div class="controle-item"><label>Intercepto (n):</label><input type="range" id="lN" min="-10" max="10" step="1" value="0"><span id="vLN" class="v-display">0.0</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setupChart(id, color) {
+        return new Chart(document.getElementById(id), {
+            type: 'line',
+            data: { datasets: [{ data: [], borderColor: color, borderWidth: 3, pointRadius: 0, fill: false, tension: 0.2 }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true, // Importante para manter o quadrado
+                aspectRatio: 1,            // Força proporção 1:1
+                scales: {
+                    x: {
+                        type: 'linear', position: 'center', min: -10, max: 10,
+                        ticks: { stepSize: 1, autoSkip: false, callback: function(v) { return v; } },
+                        grid: { color: '#ddd' }
+                    },
+                    y: {
+                        type: 'linear', position: 'center', min: -10, max: 10,
+                        ticks: { stepSize: 1, autoSkip: false, callback: function(v) { return v === 0 ? '' : v; } },
+                        grid: { color: '#ddd' }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    const cQuad = setupChart('chartQuad', '#1a73e8');
+    const cLin = setupChart('chartLin', '#d93025');
+
+    function updateQuad() {
+        const a = parseFloat(document.getElementById('qA').value);
+        const b = parseFloat(document.getElementById('qB').value);
+        const c = parseFloat(document.getElementById('qC').value);
+        document.getElementById('vQA').innerText = a.toFixed(1);
+        document.getElementById('vQB').innerText = b.toFixed(1);
+        document.getElementById('vQC').innerText = c.toFixed(1);
+        const bSig = b >= 0 ? "+ " + b.toFixed(1) : "- " + Math.abs(b).toFixed(1);
+        const cSig = c >= 0 ? "+ " + c.toFixed(1) : "- " + Math.abs(c).toFixed(1);
+        document.getElementById('eqQuad').innerText = `f(x) = ${a.toFixed(1)}x² ${bSig}x ${cSig}`;
+        const data = [];
+        for(let x=-10; x<=10; x+=0.1) data.push({x: x, y: a*x*x + b*x + c});
+        cQuad.data.datasets[0].data = data;
+        cQuad.update('none');
+    }
+
+    function updateLin() {
+        const m = parseFloat(document.getElementById('lM').value);
+        const n = parseFloat(document.getElementById('lN').value);
+        document.getElementById('vLM').innerText = m.toFixed(1);
+        document.getElementById('vLN').innerText = n.toFixed(1);
+        const nSig = n >= 0 ? "+ " + n.toFixed(1) : "- " + Math.abs(n).toFixed(1);
+        document.getElementById('eqLin').innerText = `f(x) = ${m.toFixed(1)}x ${nSig}`;
+        const data = [{x: -10, y: m*(-10)+n}, {x: 10, y: m*10+n}];
+        cLin.data.datasets[0].data = data;
+        cLin.update('none');
+    }
+
+    document.querySelectorAll('input').forEach(i => i.addEventListener('input', () => { updateQuad(); updateLin(); }));
+    updateQuad(); updateLin();
+</script>
+</body>
+</html>
