@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador MAIA - Derivada</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --secondary: #d93025;
+            --accent: #f9ab00;
+            --bg: #f8f9fa;
+            --text: #202124;
+            --muted: #5f6368;
+            --panel: #ffffff;
+            --panel-soft: #e8f0fe;
+            --panel-soft-border: #c1d5fa;
+            --danger-soft: #fce8e6;
+            --danger-border: #fad2cf;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0 0 0.25rem;
+            font-size: 1.8rem;
+        }
+
+        .header p {
+            margin: 0;
+        }
+
+        .author-credit {
+            margin-top: 0.35rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0.95;
+        }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--panel);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            min-width: 350px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .graph-caption {
+            margin-top: 14px;
+            padding: 0 10px;
+            font-size: 0.95rem;
+            color: var(--muted);
+            font-style: italic;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-weight: 700;
+            color: #444;
+            font-size: 0.95rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .display-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: var(--panel-soft);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--panel-soft-border);
+        }
+
+        .stat-box span {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-box label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .stat-box.highlight {
+            grid-column: span 2;
+            background: var(--danger-soft);
+            border-color: var(--danger-border);
+        }
+
+        .stat-box.highlight span {
+            color: var(--secondary);
+        }
+
+        .formula {
+            font-family: "Courier New", Courier, monospace;
+            background: #202124;
+            color: #8ab4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .chart-error {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fff4e5;
+            color: #7a4b00;
+            border: 1px solid #ffd59a;
+            font-size: 0.95rem;
+        }
+
+        .note {
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #f1f8e9;
+            border: 1px solid #dcedc8;
+            color: #33691e;
+            font-size: 0.92rem;
+        }
+
+        hr {
+            width: 100%;
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Laboratório MAIA: Derivada</h1>
+        <p>A inclinação da reta tangente como velocidade instantânea</p>
+        <p class="author-credit">Professor Adeil Araújo | Doutorando: RENOEN/IFCE</p>
+    </header>
+
+    <main class="main-container">
+        <section class="card" aria-label="Gráfico da simulação">
+            <div class="chart-container">
+                <canvas id="kinematicsChart"></canvas>
+            </div>
+
+            <p class="graph-caption">
+                O significado geométrico da derivada é a inclinação da reta tangente à curva em um ponto.
+                Essa inclinação é dada por tan(θ).
+            </p>
+
+            <div id="chartError" class="chart-error" role="alert">
+                Não foi possível carregar o gráfico. Verifique sua conexão com a internet e recarregue a página.
+            </div>
+        </section>
+
+        <section class="card" aria-label="Controles e resultados da simulação">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="sliderT">
+                        Ponto de análise (Tempo:
+                        <span id="valT" aria-live="polite">0.00</span> s)
+                    </label>
+                    <input type="range" id="sliderT" min="0" max="0.49" step="0.01" value="0">
+                </div>
+
+                <hr>
+
+                <div class="control-group">
+                    <label for="sliderG">
+                        Gravidade (g):
+                        <span id="valG" aria-live="polite">9.8</span> m/s²
+                    </label>
+                    <input type="range" id="sliderG" min="0" max="20" step="0.1" value="9.8">
+                </div>
+
+                <div class="control-group">
+                    <label for="sliderV0">
+                        Velocidade inicial (v₀):
+                        <span id="valV0" aria-live="polite">0.6</span> m/s
+                    </label>
+                    <input type="range" id="sliderV0" min="0" max="5" step="0.1" value="0.6">
+                </div>
+            </div>
+
+            <div class="display-panel">
+                <div class="stat-box">
+                    <label>Δt (Base)</label>
+                    <span id="dispDt" aria-live="polite">0.10 s</span>
+                </div>
+
+                <div class="stat-box">
+                    <label>Δs (Altura)</label>
+                    <span id="dispDs" aria-live="polite">0.06 m</span>
+                </div>
+
+                <div class="stat-box highlight">
+                    <label>Velocidade (v = Δs/Δt)</label>
+                    <span id="dispV" aria-live="polite">0.60 m/s</span>
+                </div>
+            </div>
+
+            <div id="formulaBox" class="formula" aria-live="polite">
+                s(t) = 0.60t + 0.50 · 9.8 · t²<br>
+                v(t) = ds/dt = 0.60 + 9.8t<br>
+                v(0) = s'(0) = 0.60 m/s
+            </div>
+
+            <div class="note" id="conceptNote">
+                No instante inicial, a inclinação da reta tangente é a velocidade inicial.
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const T_MIN = 0;
+        const T_MAX = 0.5;
+        const T_STEP = 0.01;
+        const TANGENT_HALF_WIDTH = 0.15;
+        const DT_TANGENT_DEFAULT = 0.10;
+        const Y_PADDING_RATIO = 0.1;
+
+        const elements = {
+            chartCanvas: document.getElementById("kinematicsChart"),
+            chartError: document.getElementById("chartError"),
+            sliderT: document.getElementById("sliderT"),
+            sliderG: document.getElementById("sliderG"),
+            sliderV0: document.getElementById("sliderV0"),
+            valT: document.getElementById("valT"),
+            valG: document.getElementById("valG"),
+            valV0: document.getElementById("valV0"),
+            dispDt: document.getElementById("dispDt"),
+            dispDs: document.getElementById("dispDs"),
+            dispV: document.getElementById("dispV"),
+            formulaBox: document.getElementById("formulaBox"),
+            conceptNote: document.getElementById("conceptNote")
+        };
+
+        let chart = null;
+
+        const position = (t, v0, g) => (v0 * t) + (0.5 * g * t * t);
+        const velocity = (t, v0, g) => v0 + (g * t);
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function formatNumber(value, decimals) {
+            return Number(value).toFixed(decimals);
+        }
+
+        function buildCurvePoints(v0, g) {
+            const points = [];
+
+            for (let t = T_MIN; t <= T_MAX + 1e-9; t += T_STEP) {
+                const roundedT = Number(t.toFixed(2));
+                points.push({
+                    x: roundedT,
+                    y: position(roundedT, v0, g)
+                });
+            }
+
+            return points;
+        }
+
+        function buildTangentPoints(tSel, sSel, vInst) {
+            const start = clamp(tSel - TANGENT_HALF_WIDTH, T_MIN, T_MAX);
+            const end = clamp(tSel + TANGENT_HALF_WIDTH, T_MIN, T_MAX);
+            const tangentPoints = [];
+
+            for (let t = start; t <= end + 1e-9; t += T_STEP) {
+                const roundedT = Number(t.toFixed(2));
+                tangentPoints.push({
+                    x: roundedT,
+                    y: sSel + vInst * (roundedT - tSel)
+                });
+            }
+
+            return tangentPoints;
+        }
+
+        function buildTrianglePoints(tSel, sSel, vInst) {
+            const endX = clamp(tSel + DT_TANGENT_DEFAULT, T_MIN, T_MAX);
+            const effectiveDt = endX - tSel;
+            const endY = sSel + (vInst * effectiveDt);
+
+            return {
+                points: [
+                    { x: tSel, y: sSel },
+                    { x: endX, y: sSel },
+                    { x: endX, y: endY },
+                    { x: tSel, y: sSel }
+                ],
+                dt: effectiveDt,
+                ds: endY - sSel
+            };
+        }
+
+        function buildFormula(v0, g, vAtZero) {
+            return `
+                s(t) = ${formatNumber(v0, 2)}t + 0.50 · ${formatNumber(g, 1)} · t²<br>
+                v(t) = ds/dt = ${formatNumber(v0, 2)} + ${formatNumber(g, 1)}t<br>
+                v(0) = s'(0) = ${formatNumber(vAtZero, 2)} m/s
+            `;
+        }
+
+        function buildConceptNote(tSel, vInst, v0) {
+            if (tSel === 0) {
+                return `No instante inicial, a inclinação da reta tangente é a velocidade inicial: v(0) = v₀ = ${formatNumber(v0, 2)} m/s.`;
+            }
+
+            return `Neste ponto, a inclinação da reta tangente representa a velocidade instantânea: v(${formatNumber(tSel, 2)}) = ${formatNumber(vInst, 2)} m/s.`;
+        }
+
+        function getSimulationData() {
+            const tSel = parseFloat(elements.sliderT.value);
+            const g = parseFloat(elements.sliderG.value);
+            const v0 = parseFloat(elements.sliderV0.value);
+
+            const curvePoints = buildCurvePoints(v0, g);
+            const vInst = velocity(tSel, v0, g);
+            const sSel = position(tSel, v0, g);
+            const tangentPoints = buildTangentPoints(tSel, sSel, vInst);
+            const triangle = buildTrianglePoints(tSel, sSel, vInst);
+
+            const allYValues = [
+                ...curvePoints.map(point => point.y),
+                ...tangentPoints.map(point => point.y),
+                ...triangle.points.map(point => point.y),
+                sSel
+            ];
+
+            const maxY = Math.max(...allYValues);
+            const suggestedYMax = Math.max(1, maxY + maxY * Y_PADDING_RATIO);
+
+            return {
+                tSel,
+                g,
+                v0,
+                curvePoints,
+                tangentPoints,
+                trianglePoints: triangle.points,
+                pointP: [{ x: tSel, y: sSel }],
+                dt: triangle.dt,
+                ds: triangle.ds,
+                vInst,
+                sSel,
+                yMax: Number(suggestedYMax.toFixed(2))
+            };
+        }
+
+        function updateDisplay(data) {
+            elements.valT.textContent = formatNumber(data.tSel, 2);
+            elements.valG.textContent = formatNumber(data.g, 1);
+            elements.valV0.textContent = formatNumber(data.v0, 1);
+
+            elements.dispDt.textContent = `${formatNumber(data.dt, 2)} s`;
+            elements.dispDs.textContent = `${formatNumber(data.ds, 3)} m`;
+            elements.dispV.textContent = `${formatNumber(data.vInst, 2)} m/s`;
+
+            elements.formulaBox.innerHTML = buildFormula(data.v0, data.g, velocity(0, data.v0, data.g));
+            elements.conceptNote.textContent = buildConceptNote(data.tSel, data.vInst, data.v0);
+        }
+
+        function createChart(data) {
+            if (typeof Chart === "undefined") {
+                elements.chartCanvas.style.display = "none";
+                elements.chartError.style.display = "block";
+                return;
+            }
+
+            const ctx = elements.chartCanvas.getContext("2d");
+
+            chart = new Chart(ctx, {
+                type: "scatter",
+                data: {
+                    datasets: [
+                        {
+                            label: "Posição s(t)",
+                            data: data.curvePoints,
+                            showLine: true,
+                            borderColor: "#1a73e8",
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: "Reta tangente",
+                            data: data.tangentPoints,
+                            showLine: true,
+                            borderColor: "#d93025",
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: "Triângulo Δs/Δt",
+                            data: data.trianglePoints,
+                            showLine: true,
+                            borderColor: "#f9ab00",
+                            backgroundColor: "rgba(249, 171, 0, 0.22)",
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: "Ponto P",
+                            data: data.pointP,
+                            pointRadius: 6,
+                            pointBackgroundColor: "#202124"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: {
+                            type: "linear",
+                            min: T_MIN,
+                            max: T_MAX,
+                            title: {
+                                display: true,
+                                text: "Tempo (s)"
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: data.yMax,
+                            title: {
+                                display: true,
+                                text: "Posição (m)"
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: "bottom"
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(data) {
+            if (!chart) {
+                createChart(data);
+                return;
+            }
+
+            chart.data.datasets[0].data = data.curvePoints;
+            chart.data.datasets[1].data = data.tangentPoints;
+            chart.data.datasets[2].data = data.trianglePoints;
+            chart.data.datasets[3].data = data.pointP;
+            chart.options.scales.y.max = data.yMax;
+            chart.update("none");
+        }
+
+        function updateSimulation() {
+            const data = getSimulationData();
+            updateDisplay(data);
+            updateChart(data);
+        }
+
+        [elements.sliderT, elements.sliderG, elements.sliderV0].forEach(input => {
+            input.addEventListener("input", updateSimulation);
+        });
+
+        updateSimulation();
+    </script>
+</body>
+</html>
