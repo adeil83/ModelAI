@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAIA - Laboratório de Parâmetros (0,0)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; }
+        .header { background: #1a73e8; color: white; width: 100%; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 950px; width: 95%; background: white; margin: 20px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        .canvas-wrapper { 
+            height: 400px; 
+            margin-bottom: 20px; 
+            background-color: #fff;
+            background-image: linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+        
+        .painel-ajuste { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; }
+        .controles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .controle-grupo { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: bold; color: #444; font-size: 0.9em; }
+        
+        .formula { text-align: center; font-size: 1.6em; font-family: 'Courier New', monospace; margin: 10px 0; color: #d93025; font-weight: bold; background: #ffebee; padding: 10px; border-radius: 8px; min-height: 40px; }
+        .v-display { font-weight: bold; color: #1a73e8; background: white; padding: 2px 5px; border-radius: 4px; border: 1px solid #ccc; text-align: center; }
+        
+        .painel-status { text-align: center; margin-top: 15px; padding: 10px; border-radius: 8px; font-weight: bold; border: 1px solid #ccc; background: white; min-height: 20px; }
+        .status-sucesso { background-color: #c8e6c9; color: #2e7d32; border-color: #a5d6a7; animation: pulse 1s infinite alternate; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(46, 125, 50, 0.3); }
+            100% { box-shadow: 0 0 15px rgba(46, 125, 50, 0.6); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Desafio MAIA: Ajuste de Curva</h1>
+    <p>Ajuste os parâmetros para capturar os pontos que partem de (0,0).</p>
+</div>
+
+<div class="container">
+    <div class="canvas-wrapper">
+        <canvas id="graficoOrigem"></canvas>
+    </div>
+
+    <div class="formula" id="formulaTexto">y = 0.0x² + 0.0x + 0.0</div>
+
+    <div class="painel-ajuste">
+        <div class="controles">
+            <div class="controle-grupo">
+                <label>Gravidade (A = g/2): <span id="valA" class="v-display">0.0</span></label>
+                <input type="range" id="sliderA" min="0" max="10" step="0.1" value="0">
+            </div>
+            <div class="controle-grupo">
+                <label>Velocidade (B = v₀): <span id="valB" class="v-display">0.0</span></label>
+                <input type="range" id="sliderB" min="-5" max="5" step="0.1" value="0">
+            </div>
+            <div class="controle-grupo">
+                <label>Altura Inicial (C = s₀): <span id="valC" class="v-display">0.0</span></label>
+                <input type="range" id="sliderC" min="-2" max="2" step="0.1" value="0">
+            </div>
+        </div>
+        
+        <div id="status" class="painel-status">Os pontos azuis nascem em (0,0). Tente encaixar a curva!</div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('graficoOrigem').getContext('2d');
+    
+    // GABARITO FÍSICO BASEADO NA SUA IMAGEM: y = 4.7x² + 0.6x + 0
+    const pontosExperimentais = [
+        {x: 0.00, y: 0.00},
+        {x: 0.07, y: 0.07},
+        {x: 0.14, y: 0.18},
+        {x: 0.21, y: 0.34},
+        {x: 0.28, y: 0.54},
+        {x: 0.35, y: 0.80},
+        {x: 0.42, y: 1.09}
+    ];
+
+    const chart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Sua Curva',
+                type: 'line',
+                data: [],
+                borderColor: '#d93025',
+                borderWidth: 4,
+                pointRadius: 0,
+                fill: false,
+                order: 1
+            }, {
+                label: 'Dados da Esfera',
+                data: pontosExperimentais,
+                backgroundColor: '#1a73e8',
+                pointRadius: 7,
+                order: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { type: 'linear', min: 0, max: 0.5, title: { display: true, text: 'Tempo (s)' } },
+                y: { min: -0.5, max: 1.5, title: { display: true, text: 'Posição (m)' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    function atualizar() {
+        const a = parseFloat(document.getElementById('sliderA').value);
+        const b = parseFloat(document.getElementById('sliderB').value);
+        const c = parseFloat(document.getElementById('sliderC').value);
+        
+        document.getElementById('valA').innerText = a.toFixed(1);
+        document.getElementById('valB').innerText = b.toFixed(1);
+        document.getElementById('valC').innerText = c.toFixed(1);
+
+        const sinalB = b >= 0 ? "+" : "-";
+        const sinalC = c >= 0 ? "+" : "-";
+        document.getElementById('formulaTexto').innerText = 
+            `y = ${a.toFixed(1)}x² ${sinalB} ${Math.abs(b).toFixed(1)}x ${sinalC} ${Math.abs(c).toFixed(1)}`;
+
+        const pontosCurva = [];
+        for (let t = 0; t <= 0.5; t += 0.01) {
+            pontosCurva.push({x: t, y: (a * t * t) + (b * t) + c});
+        }
+
+        chart.data.datasets[0].data = pontosCurva;
+        chart.update('none');
+
+        validarAjuste(a, b, c);
+    }
+
+    function validarAjuste(a, b, c) {
+        // Gabarito correto baseado nos seus dados: A=4.7, B=0.6, C=0.0
+        const checkA = Math.abs(a - 4.7) < 0.3;
+        const checkB = Math.abs(b - 0.6) < 0.2;
+        const checkC = Math.abs(c - 0.0) < 0.1;
+
+        const statusPanel = document.getElementById('status');
+
+        if (checkA && checkB && checkC) {
+            statusPanel.innerText = "Excelente! Encaixe perfeito na origem (A=4.7, B=0.6, C=0.0)";
+            statusPanel.className = "painel-status status-sucesso";
+        } else {
+            let dicas = "Ajustando: ";
+            if (!checkC) dicas += "O C move a curva para cima/baixo. Deixe em 0 para a origem. ";
+            else if (!checkB) dicas += "O B ajusta a inclinação na saída. ";
+            else if (!checkA) dicas += "O A ajusta a curvatura da queda. ";
+            
+            statusPanel.innerText = dicas;
+            statusPanel.className = "painel-status";
+        }
+    }
+
+    document.querySelectorAll('input').forEach(input => input.addEventListener('input', atualizar));
+    atualizar();
+</script>
+
+</body>
+</html>
