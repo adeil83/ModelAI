@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laboratório MAIA: Derivada e Integral em Queda Livre</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --line: #1a73e8;
+      --accent: #d93025;
+      --accent-soft: rgba(217, 48, 37, 0.14);
+      --ok: #188038;
+      --ok-soft: rgba(24, 128, 56, 0.16);
+      --purple: #7b1fa2;
+      --purple-soft: rgba(123, 31, 162, 0.14);
+      --teal: #00897b;
+      --teal-soft: rgba(0, 137, 123, 0.14);
+      --ink: #202124;
+      --muted: #5f6368;
+      --border: #d7e2f0;
+      --shadow: 0 12px 28px rgba(26, 39, 64, 0.08);
+      --font-main: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: var(--font-main);
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #edf3fb 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+
+    .page {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px 16px 36px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1a73e8, #3c8df7);
+      color: #fff;
+      border-radius: 20px;
+      padding: 24px 20px 18px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      line-height: 1.15;
+    }
+
+    .hero .credit {
+      margin-top: 8px;
+      font-size: 0.94rem;
+      opacity: 0.95;
+    }
+
+    .grid,
+    .cards,
+    .mini-cards,
+    .toggle-grid,
+    .reading {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid {
+      grid-template-columns: 340px 1fr;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar,
+    .chart-card,
+    .mini-card {
+      padding: 18px;
+    }
+
+    .sidebar h2,
+    .chart-card h2,
+    .mini-card h3 {
+      margin: 0 0 10px;
+    }
+
+    .sidebar p,
+    .mini-card p,
+    .chart-note,
+    .fit-text,
+    .reading-text,
+    .legend {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .control,
+    .toggle-box {
+      margin-top: 16px;
+    }
+
+    .control label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+      accent-color: var(--line);
+    }
+
+    .time-box {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #eef5ff;
+      border: 1px solid #cddffd;
+      font-weight: 700;
+      color: var(--line);
+      text-align: center;
+    }
+
+    .play-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .play-row button {
+      flex: 1;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #playBtn {
+      background: var(--line);
+      color: #fff;
+    }
+
+    #pauseBtn {
+      background: #e9eef6;
+      color: var(--ink);
+    }
+
+    .big-idea {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #fff8e8;
+      border: 1px solid #f4d995;
+      color: #795300;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    .toggle-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #f9fbff;
+      font-size: 0.95rem;
+    }
+
+    .toggle-item input {
+      transform: scale(1.15);
+      accent-color: var(--line);
+    }
+
+    .cards {
+      grid-template-columns: 1fr;
+    }
+
+    .chart-card h2 {
+      font-size: 1.35rem;
+    }
+
+    .chart-card .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 14px;
+      border: 1px solid #dde7f4;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+    }
+
+    .legend {
+      margin-top: 10px;
+      font-size: 0.92rem;
+    }
+
+    .reading {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin-top: 14px;
+    }
+
+    .reading-box {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .reading-box strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .reading-box.red {
+      background: var(--accent-soft);
+      border-color: rgba(217, 48, 37, 0.24);
+    }
+
+    .reading-box.green {
+      background: var(--ok-soft);
+      border-color: rgba(24, 128, 56, 0.24);
+    }
+
+    .reading-box.purple {
+      background: var(--purple-soft);
+      border-color: rgba(123, 31, 162, 0.24);
+    }
+
+    .reading-box.teal {
+      background: var(--teal-soft);
+      border-color: rgba(0, 137, 123, 0.24);
+    }
+
+    .mini-cards {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 18px;
+    }
+
+    .fit {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #d7e5fb;
+    }
+
+    .fit code {
+      display: block;
+      margin-top: 6px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--line);
+    }
+
+    .footer {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: #eef7ee;
+      border: 1px solid #d5ead6;
+      color: #2f5b35;
+      line-height: 1.55;
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>Laboratório MAIA: Derivada e Integral em Queda Livre</h1>
+      <p class="credit">Professor Adeil Araújo | Doutorando: RENOEN/IFCE</p>
+    </section>
+
+    <section class="grid">
+      <aside class="panel sidebar">
+        <h2>Ideia central</h2>
+        <p>
+          Aqui os alunos podem ver as duas leituras geométricas em ambos os gráficos.
+          A derivada aparece como inclinação da tangente.
+          A integral aparece como área acumulada até o instante escolhido.
+        </p>
+
+        <div class="control">
+          <label for="timeSlider">Tempo analisado</label>
+          <input id="timeSlider" type="range" min="0" max="0.435" step="0.001" value="0.201" />
+          <div class="time-box">t = <span id="timeValue">0,201</span> s</div>
+        </div>
+
+        <div class="play-row">
+          <button id="playBtn" type="button">Animar</button>
+          <button id="pauseBtn" type="button">Pausar</button>
+        </div>
+
+        <div class="toggle-box">
+          <h2>Camadas visuais</h2>
+          <div class="toggle-grid">
+            <label class="toggle-item"><input type="checkbox" id="showPosDerivative" checked /> Derivada em y × t</label>
+            <label class="toggle-item"><input type="checkbox" id="showPosIntegral" checked /> Integral em y × t</label>
+            <label class="toggle-item"><input type="checkbox" id="showVelDerivative" checked /> Derivada em v × t</label>
+            <label class="toggle-item"><input type="checkbox" id="showVelIntegral" checked /> Integral em v × t</label>
+          </div>
+        </div>
+
+        <div class="big-idea">
+          <strong>Resumo conceitual:</strong><br />
+          no gráfico posição × tempo, a derivada é a velocidade e a integral é a área sob y(t).<br />
+          no gráfico velocidade × tempo, a derivada é a aceleração e a integral é o deslocamento.
+        </div>
+
+        <div class="fit">
+          <div class="fit-text">Ajustes usados a partir da videoanálise:</div>
+          <code>y(t) = 0,6t + 4,7t²</code>
+          <code>v(t) = 0,6 + 9,4t</code>
+          <code>a(t) = 9,4</code>
+        </div>
+      </aside>
+
+      <section class="cards">
+        <article class="panel chart-card">
+          <h2>1. Gráfico posição × tempo</h2>
+          <p class="subtitle">
+            Neste gráfico, a tangente mostra a derivada e a área roxa mostra a integral acumulada de y(t).
+          </p>
+          <canvas id="positionCanvas" width="820" height="360"></canvas>
+          <div class="legend">
+            Azul: função posição. Vermelho: tangente. Roxo: área sob y(t).
+          </div>
+
+          <div class="reading">
+            <div class="reading-box red">
+              <strong>Derivada geométrica</strong>
+              <div id="derivativeReadingPos" class="reading-text"></div>
+            </div>
+            <div class="reading-box green">
+              <strong>Leitura física</strong>
+              <div id="velocityReadingPos" class="reading-text"></div>
+            </div>
+            <div class="reading-box purple">
+              <strong>Integral geométrica</strong>
+              <div id="integralReadingPos" class="reading-text"></div>
+            </div>
+            <div class="reading-box teal">
+              <strong>Leitura física da integral</strong>
+              <div id="integralMeaningPos" class="reading-text"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel chart-card">
+          <h2>2. Gráfico velocidade × tempo</h2>
+          <p class="subtitle">
+            Neste gráfico, a tangente mostra a derivada e a área verde mostra a integral acumulada de v(t).
+          </p>
+          <canvas id="velocityCanvas" width="820" height="360"></canvas>
+          <div class="legend">
+            Vermelho: função velocidade. Azul: dados experimentais. Verde: área sob v(t). Roxo: tangente da derivada.
+          </div>
+
+          <div class="reading">
+            <div class="reading-box red">
+              <strong>Derivada geométrica</strong>
+              <div id="derivativeReadingVel" class="reading-text"></div>
+            </div>
+            <div class="reading-box green">
+              <strong>Leitura física</strong>
+              <div id="accelerationReadingVel" class="reading-text"></div>
+            </div>
+            <div class="reading-box purple">
+              <strong>Integral geométrica</strong>
+              <div id="integralReadingVel" class="reading-text"></div>
+            </div>
+            <div class="reading-box teal">
+              <strong>Leitura física da integral</strong>
+              <div id="displacementReadingVel" class="reading-text"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </section>
+
+    <section class="mini-cards">
+      <article class="panel mini-card">
+        <h3>No gráfico y × t</h3>
+        <p>A derivada diz quão rápido a posição muda. A integral acumula posição ao longo do tempo, com unidade m·s.</p>
+      </article>
+      <article class="panel mini-card">
+        <h3>No gráfico v × t</h3>
+        <p>A derivada diz quão rápido a velocidade muda. A integral acumula deslocamento, com unidade metro.</p>
+      </article>
+      <article class="panel mini-card">
+        <h3>Boa sacada didática</h3>
+        <p>Os alunos veem que derivar e integrar não são truques algébricos soltos, mas leituras geométricas de um mesmo movimento. Milagre raro.</p>
+      </article>
+    </section>
+
+    <div class="footer">
+      Em queda livre com ajuste quadrático para a posição e linear para a velocidade,
+      a derivada e a integral podem ser observadas diretamente nos dois gráficos.
+      Isso ajuda a conectar geometria, cálculo e significado físico ao mesmo tempo.
+    </div>
+  </main>
+
+  <script>
+    const experimentalData = [
+      { t: 0.000, y: 0.000, v: 0.600 },
+      { t: 0.034, y: 0.026, v: 0.772 },
+      { t: 0.067, y: 0.069, v: 1.288 },
+      { t: 0.101, y: 0.116, v: 1.397 },
+      { t: 0.134, y: 0.166, v: 1.515 },
+      { t: 0.168, y: 0.239, v: 2.132 },
+      { t: 0.201, y: 0.327, v: 2.689 },
+      { t: 0.235, y: 0.411, v: 2.463 },
+      { t: 0.268, y: 0.526, v: 3.485 },
+      { t: 0.302, y: 0.647, v: 3.566 },
+      { t: 0.335, y: 0.755, v: 3.257 },
+      { t: 0.368, y: 0.907, v: 4.621 },
+      { t: 0.402, y: 1.022, v: 3.382 },
+      { t: 0.435, y: 1.172, v: 4.545 }
+    ];
+
+    const positionCanvas = document.getElementById("positionCanvas");
+    const velocityCanvas = document.getElementById("velocityCanvas");
+    const pCtx = positionCanvas.getContext("2d");
+    const vCtx = velocityCanvas.getContext("2d");
+
+    const timeSlider = document.getElementById("timeSlider");
+    const timeValue = document.getElementById("timeValue");
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+
+    const derivativeReadingPos = document.getElementById("derivativeReadingPos");
+    const velocityReadingPos = document.getElementById("velocityReadingPos");
+    const integralReadingPos = document.getElementById("integralReadingPos");
+    const integralMeaningPos = document.getElementById("integralMeaningPos");
+
+    const derivativeReadingVel = document.getElementById("derivativeReadingVel");
+    const accelerationReadingVel = document.getElementById("accelerationReadingVel");
+    const integralReadingVel = document.getElementById("integralReadingVel");
+    const displacementReadingVel = document.getElementById("displacementReadingVel");
+
+    const showPosDerivative = document.getElementById("showPosDerivative");
+    const showPosIntegral = document.getElementById("showPosIntegral");
+    const showVelDerivative = document.getElementById("showVelDerivative");
+    const showVelIntegral = document.getElementById("showVelIntegral");
+
+    const tMin = 0;
+    const tMax = 0.45;
+    const yMax = 1.3;
+    const vMax = 4.9;
+    let animationId = null;
+
+    function format(value, decimals = 3) {
+      return Number(value).toFixed(decimals).replace(".", ",");
+    }
+
+    function positionFit(t) {
+      return 0.6 * t + 4.7 * t * t;
+    }
+
+    function velocityFit(t) {
+      return 0.6 + 9.4 * t;
+    }
+
+    function accelerationFit() {
+      return 9.4;
+    }
+
+    function integralPosition(t) {
+      return 0.3 * t * t + (4.7 / 3) * t * t * t;
+    }
+
+    function integralVelocity(t) {
+      return 0.6 * t + 4.7 * t * t;
+    }
+
+    function toCanvas(x, y, canvas, yUpper) {
+      const padL = 58;
+      const padR = 18;
+      const padT = 18;
+      const padB = 42;
+      const px = padL + ((x - tMin) / (tMax - tMin)) * (canvas.width - padL - padR);
+      const py = canvas.height - padB - (y / yUpper) * (canvas.height - padT - padB);
+      return { x: px, y: py };
+    }
+
+    function clearAndGrid(ctx, canvas, yUpper, yLabel) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(32, 33, 36, 0.12)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i += 1) {
+        const x = tMin + (tMax - tMin) * (i / 5);
+        const p1 = toCanvas(x, 0, canvas, yUpper);
+        const p2 = toCanvas(x, yUpper, canvas, yUpper);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      for (let i = 0; i <= 4; i += 1) {
+        const y = yUpper * (i / 4);
+        const p1 = toCanvas(tMin, y, canvas, yUpper);
+        const p2 = toCanvas(tMax, y, canvas, yUpper);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#202124";
+      ctx.lineWidth = 1.5;
+      const xAxisA = toCanvas(tMin, 0, canvas, yUpper);
+      const xAxisB = toCanvas(tMax, 0, canvas, yUpper);
+      ctx.beginPath();
+      ctx.moveTo(xAxisA.x, xAxisA.y);
+      ctx.lineTo(xAxisB.x, xAxisB.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(xAxisA.x, xAxisA.y);
+      ctx.lineTo(xAxisA.x, toCanvas(tMin, yUpper, canvas, yUpper).y);
+      ctx.stroke();
+
+      ctx.fillStyle = "#5f6368";
+      ctx.font = "14px Segoe UI";
+      ctx.fillText("tempo (s)", canvas.width / 2 - 28, canvas.height - 10);
+      ctx.save();
+      ctx.translate(18, canvas.height / 2 + 28);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+    }
+
+    function drawCurve(ctx, canvas, fn, yUpper, color, width = 3) {
+      ctx.beginPath();
+      let first = true;
+      for (let t = tMin; t <= tMax + 1e-9; t += 0.002) {
+        const p = toCanvas(t, fn(t), canvas, yUpper);
+        if (first) {
+          ctx.moveTo(p.x, p.y);
+          first = false;
+        } else {
+          ctx.lineTo(p.x, p.y);
+        }
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+
+    function drawExperimentalPoints(ctx, canvas, points, yKey, yUpper) {
+      ctx.fillStyle = "#1a73e8";
+      points.forEach((point) => {
+        const p = toCanvas(point.t, point[yKey], canvas, yUpper);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function shadeAreaUnderCurve(ctx, canvas, fn, tSel, yUpper, fillStyle) {
+      ctx.beginPath();
+      const start = toCanvas(0, 0, canvas, yUpper);
+      ctx.moveTo(start.x, start.y);
+      for (let t = 0; t <= tSel + 1e-9; t += 0.002) {
+        const p = toCanvas(t, fn(t), canvas, yUpper);
+        ctx.lineTo(p.x, p.y);
+      }
+      const endBase = toCanvas(tSel, 0, canvas, yUpper);
+      ctx.lineTo(endBase.x, endBase.y);
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+
+    function drawTangentLine(ctx, canvas, tSel, ySel, slope, yUpper, color, label) {
+      const leftT = Math.max(tMin, tSel - 0.12);
+      const rightT = Math.min(tMax, tSel + 0.12);
+      const leftY = ySel + slope * (leftT - tSel);
+      const rightY = ySel + slope * (rightT - tSel);
+      const pLeft = toCanvas(leftT, leftY, canvas, yUpper);
+      const pRight = toCanvas(rightT, rightY, canvas, yUpper);
+
+      ctx.beginPath();
+      ctx.moveTo(pLeft.x, pLeft.y);
+      ctx.lineTo(pRight.x, pRight.y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = color;
+      ctx.font = "14px Segoe UI";
+      ctx.fillText(label, pRight.x - 62, pRight.y - 10);
+    }
+
+    function drawPositionChart(tSel) {
+      clearAndGrid(pCtx, positionCanvas, yMax, "posição y (m)");
+
+      if (showPosIntegral.checked) {
+        shadeAreaUnderCurve(pCtx, positionCanvas, positionFit, tSel, yMax, "rgba(123, 31, 162, 0.16)");
+      }
+
+      drawCurve(pCtx, positionCanvas, positionFit, yMax, "#1a73e8", 3);
+      drawExperimentalPoints(pCtx, positionCanvas, experimentalData, "y", yMax);
+
+      const ySel = positionFit(tSel);
+      const vSel = velocityFit(tSel);
+      const pSel = toCanvas(tSel, ySel, positionCanvas, yMax);
+
+      if (showPosDerivative.checked) {
+        drawTangentLine(pCtx, positionCanvas, tSel, ySel, vSel, yMax, "#d93025", "tangente");
+
+        const triBaseT = Math.min(tMax, tSel + 0.06);
+        const triBaseY = ySel;
+        const triTopY = ySel + vSel * (triBaseT - tSel);
+        const a = toCanvas(tSel, ySel, positionCanvas, yMax);
+        const b = toCanvas(triBaseT, triBaseY, positionCanvas, yMax);
+        const c = toCanvas(triBaseT, triTopY, positionCanvas, yMax);
+
+        pCtx.beginPath();
+        pCtx.moveTo(a.x, a.y);
+        pCtx.lineTo(b.x, b.y);
+        pCtx.lineTo(c.x, c.y);
+        pCtx.closePath();
+        pCtx.fillStyle = "rgba(217, 48, 37, 0.14)";
+        pCtx.fill();
+        pCtx.strokeStyle = "#d93025";
+        pCtx.lineWidth = 2;
+        pCtx.stroke();
+      }
+
+      if (showPosIntegral.checked) {
+        const baseSel = toCanvas(tSel, 0, positionCanvas, yMax);
+        pCtx.strokeStyle = "#7b1fa2";
+        pCtx.lineWidth = 2;
+        pCtx.beginPath();
+        pCtx.moveTo(baseSel.x, baseSel.y);
+        pCtx.lineTo(pSel.x, pSel.y);
+        pCtx.stroke();
+
+        pCtx.fillStyle = "#7b1fa2";
+        pCtx.font = "14px Segoe UI";
+        pCtx.fillText("área acumulada", Math.max(90, baseSel.x - 96), Math.max(42, baseSel.y - 18));
+      }
+
+      pCtx.fillStyle = "#202124";
+      pCtx.beginPath();
+      pCtx.arc(pSel.x, pSel.y, 5, 0, Math.PI * 2);
+      pCtx.fill();
+      pCtx.font = "14px Segoe UI";
+      pCtx.fillText("P", pSel.x + 8, pSel.y - 8);
+
+      const areaY = integralPosition(tSel);
+      derivativeReadingPos.textContent = showPosDerivative.checked
+        ? `No instante t = ${format(tSel)} s, a inclinação da tangente vale ${format(vSel, 2)}.`
+        : "Camada da derivada desativada.";
+      velocityReadingPos.textContent = showPosDerivative.checked
+        ? `Fisicamente, essa derivada é a velocidade: v(${format(tSel)}) = ${format(vSel, 2)} m/s.`
+        : "Sem tangente visível, a leitura instantânea da velocidade fica oculta.";
+      integralReadingPos.textContent = showPosIntegral.checked
+        ? `De 0 até ${format(tSel)} s, a área sob y(t) vale ${format(areaY, 3)}.`
+        : "Camada da integral desativada.";
+      integralMeaningPos.textContent = showPosIntegral.checked
+        ? `Essa integral é ∫y(t)dt. Ela acumula posição ao longo do tempo, então sua unidade é m·s, não deslocamento.`
+        : "Sem área sombreada, a leitura acumulada de y(t) fica oculta.";
+    }
+
+    function drawVelocityChart(tSel) {
+      clearAndGrid(vCtx, velocityCanvas, vMax, "velocidade v (m/s)");
+
+      if (showVelIntegral.checked) {
+        shadeAreaUnderCurve(vCtx, velocityCanvas, velocityFit, tSel, vMax, "rgba(24, 128, 56, 0.20)");
+      }
+
+      drawCurve(vCtx, velocityCanvas, velocityFit, vMax, "#d93025", 3);
+      drawExperimentalPoints(vCtx, velocityCanvas, experimentalData, "v", vMax);
+
+      const vSel = velocityFit(tSel);
+      const aSel = accelerationFit();
+      const pSel = toCanvas(tSel, vSel, velocityCanvas, vMax);
+
+      if (showVelDerivative.checked) {
+        drawTangentLine(vCtx, velocityCanvas, tSel, vSel, aSel, vMax, "#7b1fa2", "tangente");
+
+        const triBaseT = Math.min(tMax, tSel + 0.06);
+        const triBaseY = vSel;
+        const triTopY = vSel + aSel * (triBaseT - tSel);
+        const a = toCanvas(tSel, vSel, velocityCanvas, vMax);
+        const b = toCanvas(triBaseT, triBaseY, velocityCanvas, vMax);
+        const c = toCanvas(triBaseT, triTopY, velocityCanvas, vMax);
+
+        vCtx.beginPath();
+        vCtx.moveTo(a.x, a.y);
+        vCtx.lineTo(b.x, b.y);
+        vCtx.lineTo(c.x, c.y);
+        vCtx.closePath();
+        vCtx.fillStyle = "rgba(123, 31, 162, 0.16)";
+        vCtx.fill();
+        vCtx.strokeStyle = "#7b1fa2";
+        vCtx.lineWidth = 2;
+        vCtx.stroke();
+      }
+
+      if (showVelIntegral.checked) {
+        const baseSel = toCanvas(tSel, 0, velocityCanvas, vMax);
+        vCtx.beginPath();
+        vCtx.moveTo(baseSel.x, baseSel.y);
+        vCtx.lineTo(pSel.x, pSel.y);
+        vCtx.strokeStyle = "#188038";
+        vCtx.lineWidth = 2;
+        vCtx.stroke();
+
+        vCtx.fillStyle = "#188038";
+        vCtx.font = "14px Segoe UI";
+        vCtx.fillText("área acumulada", Math.max(90, baseSel.x - 96), Math.max(42, baseSel.y - 18));
+      }
+
+      vCtx.fillStyle = "#202124";
+      vCtx.beginPath();
+      vCtx.arc(pSel.x, pSel.y, 5, 0, Math.PI * 2);
+      vCtx.fill();
+      vCtx.font = "14px Segoe UI";
+      vCtx.fillText("P", pSel.x + 8, pSel.y - 8);
+
+      const areaV = integralVelocity(tSel);
+      derivativeReadingVel.textContent = showVelDerivative.checked
+        ? `No instante t = ${format(tSel)} s, a inclinação da tangente vale ${format(aSel, 2)}.`
+        : "Camada da derivada desativada.";
+      accelerationReadingVel.textContent = showVelDerivative.checked
+        ? `Fisicamente, essa derivada é a aceleração: a(${format(tSel)}) = ${format(aSel, 2)} m/s².`
+        : "Sem tangente visível, a leitura instantânea da aceleração fica oculta.";
+      integralReadingVel.textContent = showVelIntegral.checked
+        ? `De 0 até ${format(tSel)} s, a área sob v(t) vale ${format(areaV, 3)}.`
+        : "Camada da integral desativada.";
+      displacementReadingVel.textContent = showVelIntegral.checked
+        ? `Como este é um gráfico de velocidade, essa integral representa deslocamento: Δy = ${format(areaV, 3)} m.`
+        : "Sem área sombreada, a leitura acumulada do deslocamento fica oculta.";
+    }
+
+    function update() {
+      const tSel = Number(timeSlider.value);
+      timeValue.textContent = format(tSel);
+      drawPositionChart(tSel);
+      drawVelocityChart(tSel);
+    }
+
+    function animate() {
+      let tSel = Number(timeSlider.value) + 0.0025;
+      if (tSel > Number(timeSlider.max)) {
+        tSel = Number(timeSlider.min);
+      }
+      timeSlider.value = tSel.toFixed(3);
+      update();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    timeSlider.addEventListener("input", update);
+    playBtn.addEventListener("click", () => {
+      if (animationId === null) {
+        animate();
+      }
+    });
+    pauseBtn.addEventListener("click", () => {
+      if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    });
+
+    [showPosDerivative, showPosIntegral, showVelDerivative, showVelIntegral].forEach((el) => {
+      el.addEventListener("change", update);
+    });
+
+    update();
+  </script>
+</body>
+</html>
