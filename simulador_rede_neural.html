@@ -1,0 +1,2974 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rede Neural — Visualizador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#ffffff;--surface:#f7f8fa;--surface2:#eef0f4;--border:#e2e5eb;
+  --text:#1a1d26;--muted:#7a7f90;--accent:#2563eb;--accent-lt:#eff4ff;
+  --amber:#d97706;--amber-lt:#fffbeb;--red:#dc2626;--red-lt:#fff5f5;
+  --green:#059669;--green-lt:#f0fdf4;
+  --mono:'DM Mono',monospace;--sans:'Syne',sans-serif;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f2f4f8;color:var(--text);font-family:var(--sans);}
+.page{max-width:1200px;margin:36px auto;padding:2rem 1.75rem 4rem;background:#ffffff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid var(--border);padding-bottom:1.25rem;margin-bottom:2rem;}
+header h1{font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:800;letter-spacing:-.03em;}
+header h1 em{font-style:normal;color:var(--accent);}
+header p{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;line-height:1.9;}
+.arch-controls{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) minmax(360px,2fr) minmax(260px,1fr);gap:1rem;margin-bottom:1.5rem;align-items:start;}
+@media(max-width:800px){.arch-controls{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) minmax(360px,2fr) minmax(260px,1fr);gap:1rem;margin-bottom:1.5rem;align-items:start;}}
+@media(max-width:500px){.arch-controls{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) minmax(360px,2fr) minmax(260px,1fr);gap:1rem;margin-bottom:1.5rem;align-items:start;}}
+.target-stack{display:grid;grid-template-columns:1fr;gap:1rem;min-width:0;}
+@media(max-width:800px){.target-stack{display:grid;grid-template-columns:1fr;gap:1rem;min-width:0;}}
+
+.ctrl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;}
+.ctrl-card.hidden-card{grid-column:span 1;}
+#hidden-neuron-sliders{display:grid;grid-template-columns:1fr;gap:.75rem;}
+.hidden-neuron-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.65rem .8rem;}
+.hidden-neuron-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:.45rem;}
+.hidden-neuron-head strong{color:var(--text);font-weight:500;}
+.hidden-neuron-row{display:flex;align-items:center;gap:10px;}
+@media(min-width:1100px){#hidden-neuron-sliders{grid-template-columns:1fr 1fr;}}
+.ctrl-card label{display:block;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem;}
+.slider-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;}
+input[type=range]{width:100%;min-width:0;-webkit-appearance:none;height:3px;background:var(--border);border-radius:3px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(37,99,235,.25);}
+.slider-val{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--accent);min-width:44px;text-align:right;justify-self:end;white-space:nowrap;}
+.main{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start;}
+@media(max-width:900px){.main{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.2rem;margin-bottom:1rem;}
+.card:last-child{margin-bottom:0;}
+.card-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.9rem;}
+.phase-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1.2rem;}
+.phase-pill{border:1.5px solid var(--border);border-radius:9px;padding:8px 4px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted);background:var(--bg);transition:all .25s;}
+.phase-pill .num{display:block;font-size:17px;font-weight:600;margin-bottom:2px;}
+.ph-fwd{border-color:var(--accent)!important;background:var(--accent-lt)!important;color:var(--accent)!important;}
+.ph-loss{border-color:var(--amber)!important;background:var(--amber-lt)!important;color:var(--amber)!important;}
+.ph-back{border-color:var(--red)!important;background:var(--red-lt)!important;color:var(--red)!important;}
+.ph-upd{border-color:var(--green)!important;background:var(--green-lt)!important;color:var(--green)!important;}
+#canvas-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:auto;margin-bottom:1rem;}
+#nsvg{display:block;}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:.65rem .8rem;}
+.metric .lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:3px;}
+.metric .val{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text);}
+.btn-row{display:flex;gap:8px;margin-top:.75rem;}
+.btn{flex:1;font-family:var(--mono);font-size:12px;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;cursor:pointer;background:var(--bg);color:var(--text);transition:all .15s;text-align:center;}
+.btn:hover{background:var(--surface2);border-color:#c0c5d0;}
+.btn:active{transform:scale(.97);}
+.btn.step{border-color:var(--accent);color:var(--accent);background:var(--accent-lt);}
+.btn.step:hover{background:#dbeafe;}
+.btn.run{border-color:var(--green);color:var(--green);background:var(--green-lt);}
+.btn.run:hover{background:#dcfce7;}
+.btn.pause{border-color:var(--amber);color:var(--amber);background:var(--amber-lt);}
+#fullcalc{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);padding:1.15rem 1.25rem;font-family:var(--mono);font-size:12.2px;line-height:2.12;color:var(--muted);max-height:680px;overflow-y:auto;scrollbar-width:thin;}
+#fullcalc::-webkit-scrollbar{width:4px;}
+#fullcalc::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.fc-section{margin-bottom:1.1rem;}
+.fc-head{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;padding:4px 8px;border-radius:5px;display:inline-block;margin-bottom:.4rem;}
+.fc-head.fwd{background:var(--accent-lt);color:var(--accent);}
+.fc-head.loss{background:var(--amber-lt);color:var(--amber);}
+.fc-head.back{background:var(--red-lt);color:var(--red);}
+.fc-head.upd{background:var(--green-lt);color:var(--green);}
+.fc-line{display:block;padding-left:8px;border-left:2px solid var(--border);margin:1px 0;}
+.fc-line .eq{color:var(--text);}
+.fc-line .res{font-weight:500;color:var(--accent);}
+.fc-line .res.amber{color:var(--amber);}
+.fc-line .res.red{color:var(--red);}
+.fc-line .res.green{color:var(--green);}
+.sidebar{display:flex;flex-direction:column;gap:1rem;}
+.w-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.w-table th{color:var(--muted);font-weight:400;text-align:left;padding:0 0 6px;border-bottom:1px solid var(--border);}
+.w-table td{padding:5px 0;color:var(--text);border-bottom:1px solid var(--surface2);}
+.w-table td.muted{color:var(--muted);}
+.bar-wrap{width:70px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+canvas{display:block;width:100%;border-radius:6px;}
+.arch-info{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:2;}
+.arch-info span{color:var(--text);font-weight:500;}
+.progress-bar{height:6px;background:var(--surface2);border-radius:3px;margin:6px 0 2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .2s;}
+
+.history-wrap{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg);} 
+.history-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
+.history-table th{position:sticky;top:0;background:var(--surface);z-index:1;color:var(--muted);font-weight:500;text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);} 
+.history-table td{padding:6px 8px;border-bottom:1px solid var(--surface2);} 
+.history-table tr:hover td{background:var(--surface);} 
+.tiny{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8;} 
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.75rem;} 
+.info-pill{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:.55rem .65rem;} 
+.info-pill .k{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px;} 
+.info-pill .v{font-family:var(--mono);font-size:13px;color:var(--text);} 
+.scroll-note{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;text-align:right;} 
+.badge{display:inline-block;padding:2px 6px;border-radius:999px;font-family:var(--mono);font-size:9px;border:1px solid var(--border);background:var(--bg);color:var(--muted);} 
+
+
+.tooltip-box{
+  position:absolute;
+  background:#ffffff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:var(--mono);
+  font-size:11px;
+  line-height:1.6;
+  color:var(--text);
+  box-shadow:0 8px 24px rgba(0,0,0,.10);
+  max-width:260px;
+  z-index:9999;
+}
+.tooltip-label{
+  cursor:pointer;
+  user-select:none;
+}
+.tooltip-label:hover{
+  color:var(--text);
+}
+.tooltip-label::after{
+  content:' ⓘ';
+  font-size:10px;
+  color:var(--accent);
+}
+
+
+.sr-hint{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--muted);
+  margin-top:6px;
+}
+.tooltip-label{
+  outline:none;
+}
+.tooltip-label:focus{
+  box-shadow:0 0 0 2px rgba(37,99,235,.18);
+  border-radius:4px;
+}
+
+
+#voice-toggle:checked + span { background: var(--green); }
+#voice-toggle:checked + span + #voice-knob { transform: translateX(20px); }
+
+
+.line-pos{stroke:#2563eb!important;}
+.line-neg{stroke:#dc2626!important;}
+.goal-ok{color:var(--green)!important;}
+.goal-warn{color:var(--amber)!important;}
+.mode-toggle-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.step-explainer{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:.8rem .9rem;
+  font-family:var(--mono);
+  font-size:11px;
+  line-height:1.75;
+  color:var(--muted);
+  margin-bottom:1rem;
+}
+.step-explainer strong{color:var(--text);}
+.step-explainer .good{color:var(--green);font-weight:600;}
+.step-explainer .warn{color:var(--amber);font-weight:600;}
+.step-explainer .bad{color:var(--red);font-weight:600;}
+
+
+#advanced-toggle:checked + span { background: var(--accent); }
+#advanced-toggle:checked + span + #advanced-knob { transform: translateX(20px); }
+
+
+#btn-detail-step{
+  border-color:var(--amber);
+  color:var(--amber);
+  background:var(--amber-lt);
+}
+#btn-detail-step:hover{background:#fef3c7;}
+
+
+#btn-micro{
+  border-color:var(--amber);
+  color:var(--amber);
+  background:var(--amber-lt);
+}
+#btn-micro:hover{background:#fef3c7;}
+.calc-focus-node{
+  filter: drop-shadow(0 0 4px rgba(0,0,0,.08));
+}
+
+
+.didactic-note{
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--amber-lt);
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:11px;
+  line-height:1.7;
+}
+.didactic-note strong{color:var(--amber);}
+
+
+.param-wrap{max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:.7rem;}
+.param-group{border:1px solid var(--border);border-radius:12px;padding:.75rem .85rem;margin-bottom:.75rem;background:var(--surface);}
+.param-group:last-child{margin-bottom:0;}
+.param-title{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.55rem;}
+.param-row{display:flex;flex-direction:column;gap:6px;margin:.6rem 0 .8rem 0;padding:.35rem 0;border-bottom:1px solid var(--surface2);}
+.param-row .name{font-family:var(--mono);font-size:12px;color:var(--text);font-weight:700;}
+.param-row .value{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);text-align:right;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 8px;min-width:84px;}
+.param-actions{display:flex;gap:8px;margin-top:.6rem;}
+.param-btn{flex:1;font-family:var(--mono);font-size:11px;border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:8px 9px;cursor:pointer;}
+.param-btn:hover{background:var(--surface2);}
+
+
+.param-row{display:flex;flex-direction:column;gap:6px;margin:.6rem 0 .8rem 0;padding:.35rem 0;border-bottom:1px solid var(--surface2);}
+.param-row .value{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);text-align:right;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 8px;min-width:84px;}
+.param-subnote{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:0;line-height:1.6;}
+
+
+.param-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.param-slider{
+  width:100%;
+  margin:0;
+}
+
+
+.arch-controls > *{min-width:0;}
+.target-stack .ctrl-card{min-width:0;}
+.ctrl-card{overflow:visible;}
+
+
+.qa-box{
+  display:grid;
+  gap:.7rem;
+}
+.qa-input{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg);
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--text);
+}
+.qa-answer{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:.9rem 1rem;
+  font-family:var(--mono);
+  font-size:11.5px;
+  line-height:1.8;
+  color:var(--muted);
+  min-height:72px;
+}
+.qa-chip-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.qa-chip{
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  border-radius:999px;
+  padding:6px 10px;
+  font-family:var(--mono);
+  font-size:10px;
+  cursor:pointer;
+}
+.qa-chip:hover{background:var(--surface2);}
+
+
+.qa-card{
+  border:2px solid var(--accent);
+  background:linear-gradient(180deg, var(--surface), var(--bg));
+  box-shadow:0 8px 24px rgba(37,99,235,.08);
+}
+.qa-card .card-title{
+  color:var(--accent);
+}
+
+
+.qa-card{
+  width:100%;
+  box-sizing:border-box;
+}
+
+
+.qa-card{
+  margin-top:-15px;
+  position:relative;
+  z-index:2;
+}
+
+
+.arch-controls .ctrl-card,
+.arch-controls .hidden-card,
+.arch-controls .target-stack{
+  min-width:0;
+}
+
+
+@media(min-width:1700px){.page{max-width:1180px;padding:2rem 1.75rem 4rem;}}
+@media(max-width:1400px){.page{max-width:1160px;padding:1.75rem 1.5rem 3.5rem;}}
+@media(max-width:1100px){
+  .page{max-width:100%;padding:1.25rem 1rem 2.5rem;}
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div>
+    <h1>Rede <em>Neural</em><br>Visualizador</h1>
+    <div style="margin-top:.6rem;font-family:var(--mono);font-size:11px;line-height:2;color:var(--muted);">
+      <span style="color:var(--text);font-weight:600;font-size:12px;">Meirivâni Meneses de Oliveira</span><br>
+      Orientadora: <span style="color:var(--text);">Adriana Richit</span> — UFFS<br>
+      Coorientadora: <span style="color:var(--text);">Juscileide Castro</span> — UFC<br>
+      Doutorado em Ensino — Renoen/IFCE
+    </div>
+  </div>
+  <p id="arch-label">Arquitetura: —<br>Ativação: Sigmoid<br>Otimizador: SGD</p>
+
+<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">Voz</span>
+  <label style="position:relative;display:inline-block;width:42px;height:22px;">
+    <input type="checkbox" id="voice-toggle" checked style="opacity:0;width:0;height:0;">
+    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);border-radius:22px;transition:.2s;"></span>
+    <span id="voice-knob" style="position:absolute;height:18px;width:18px;left:2px;top:2px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+  </label>
+  <span id="voice-status" style="font-family:var(--mono);font-size:11px;color:var(--text);">Ligada</span>
+</div>
+<div class="mode-toggle-wrap">
+  <span style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">Modo</span>
+  <label style="position:relative;display:inline-block;width:42px;height:22px;">
+    <input type="checkbox" id="advanced-toggle" checked style="opacity:0;width:0;height:0;">
+    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);border-radius:22px;transition:.2s;"></span>
+    <span id="advanced-knob" style="position:absolute;height:18px;width:18px;left:2px;top:2px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+  </label>
+  <span id="advanced-status" style="font-family:var(--mono);font-size:11px;color:var(--text);">Avançado</span>
+</div>
+
+</header>
+
+
+<div class="card" style="margin-bottom:1rem;">
+  <div class="card-title">Como usar o visualizador</div>
+
+  <ol class="tiny" style="line-height:1.9; padding-left:18px;">
+    <li>
+      <strong>Defina a arquitetura da rede:</strong><br>
+      Ajuste o número de entradas, camadas ocultas e neurônios por camada.
+    </li>
+
+    <li>
+      <strong>Escolha o alvo (saída desejada y):</strong><br>
+      Esse é o valor que a rede deve aprender a reproduzir.
+    </li>
+
+    <li>
+      <strong>Configure o treinamento:</strong><br>
+      Ajuste o número de épocas por ciclo para controlar quantas vezes a rede será atualizada automaticamente.
+    </li>
+
+    <li>
+      <strong>Escolha as funções:</strong><br>
+      Defina:
+      <ul style="margin-top:4px;">
+        <li>função de ativação das camadas ocultas</li>
+        <li>função de ativação da saída</li>
+        <li>função de erro (loss)</li>
+      </ul>
+    </li>
+
+    <li>
+      <strong>Controle manual dos parâmetros (w e b):</strong><br>
+      Use os sliders para ajustar:
+      <ul style="margin-top:4px;">
+        <li><strong>w</strong>: pesos das conexões</li>
+        <li><strong>b</strong>: vieses dos neurônios</li>
+      </ul>
+      Isso permite criar experimentos controlados.
+    </li>
+
+    <li>
+      <strong>Execute o treinamento:</strong><br>
+      <ul style="margin-top:4px;">
+        <li><strong>▶ Passo único</strong>: executa a etapa de treino prevista no simulador</li>
+        <li><strong>⚡ Várias épocas</strong>: treina automaticamente por várias iterações</li>
+        <li><strong>⟶ Avançar cálculo</strong>: mostra o cálculo detalhado passo a passo na rede</li>
+        <li><strong>↺ Reset</strong>: reinicia o estado atual do experimento</li>
+      </ul>
+    </li>
+
+    <li>
+      <strong>Acompanhe o que está acontecendo:</strong><br>
+      Observe:
+      <ul style="margin-top:4px;">
+        <li>predição (ŷ)</li>
+        <li>erro e loss</li>
+        <li>gradiente</li>
+        <li>atualização dos pesos</li>
+        <li>cores das conexões (positivo, negativo ou próximo de zero)</li>
+      </ul>
+    </li>
+
+    <li>
+      <strong>Analise os gráficos:</strong><br>
+      <ul style="margin-top:4px;">
+        <li>gráfico da função de ativação</li>
+        <li>gráfico da função de erro</li>
+        <li>evolução do erro ao longo das épocas</li>
+      </ul>
+    </li>
+
+    <li>
+      <strong>Consulte o histórico:</strong><br>
+      Veja como a rede evolui a cada época e identifique padrões de aprendizado.
+    </li>
+
+    <li>
+      <strong>Use a caixa de dúvidas:</strong><br>
+      Faça perguntas sobre o treinamento e receba explicações com base no estado atual da rede.
+    </li>
+  </ol>
+
+  <div class="tiny" style="margin-top:10px; color:var(--accent);">
+    💡 Dica: passe o cursor sobre os elementos para ouvir explicações ou clique para ver detalhes.
+  </div>
+</div>
+
+<div class="arch-controls">
+  <div class="ctrl-card">
+    <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'n-inputs')">Nº de entradas</label>
+    <div class="slider-row">
+      <input type="range" id="n-inputs" min="1" max="5" step="1" value="2">
+      <span class="slider-val" id="v-inputs">2</span>
+    </div>
+  </div>
+  <div class="ctrl-card">
+    <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'n-layers')">Camadas ocultas</label>
+    <div class="slider-row">
+      <input type="range" id="n-layers" min="1" max="3" step="1" value="2">
+      <span class="slider-val" id="v-layers">2</span>
+    </div>
+  </div>
+  <div class="ctrl-card hidden-card">
+    <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'hidden-neurons')">Neurônios por camada oculta</label>
+    <div id="hidden-neuron-sliders"></div>
+  </div>
+  <div class="target-stack" style="max-width:100%;">
+    <div class="ctrl-card">
+      <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'n-epochs')">Épocas por ciclo</label>
+      <div class="slider-row">
+        <input type="range" id="n-epochs" min="1" max="500" step="1" value="50">
+        <span class="slider-val" id="v-epochs" style="min-width:42px">50</span>
+      </div>
+    </div>
+    <div class="ctrl-card">
+      <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'ytarget')">Saída desejada (alvo y)</label>
+      <div class="slider-row">
+        <input type="range" id="ytarget" min="0" max="5" step="0.01" value="0.80">
+        <span class="slider-val" id="y-val" style="min-width:48px">0.80</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sr-hint" style="margin:-.25rem 0 1rem 0;">Passe o cursor sobre os rótulos ou use Tab para foco. O navegador lerá a explicação em voz alta.</div>
+
+<!-- Activation & Loss selectors -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;">
+  <div class="ctrl-card">
+    <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'sel-hidden-activation')">Ativação das camadas ocultas</label>
+    <select id="sel-hidden-activation" onchange="onActivationChange()" style="width:100%;font-family:var(--mono);font-size:12px;border:1px solid var(--border);border-radius:7px;padding:7px 10px;background:var(--bg);color:var(--text);cursor:pointer;outline:none;margin-bottom:.5rem;">
+      <option value="sigmoid">Sigmoid — σ(x)</option>
+      <option value="tanh">Tanh — tanh(x)</option>
+      <option value="relu">ReLU — max(0,x)</option>
+      <option value="leaky_relu">Leaky ReLU</option>
+      <option value="linear">Linear — x</option>
+    </select>
+    <div id="hidden-act-formula" style="font-family:var(--mono);font-size:10px;color:var(--accent);padding:4px 6px;background:var(--accent-lt);border-radius:5px;text-align:center;margin-bottom:.6rem;">σ(x) = 1 / (1 + e⁻ˣ)</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;" id="act-chart-title">σ(x) — Sigmoid</div>
+    <canvas id="sig-canvas" height="80" style="display:block;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></canvas>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;text-align:center" id="act-chart-formula">σ(x) = 1 / (1 + e⁻ˣ)</div>
+  </div>
+  <div class="ctrl-card">
+    <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'sel-output-activation')">Ativação da saída</label>
+    <select id="sel-output-activation" onchange="onActivationChange()" style="width:100%;font-family:var(--mono);font-size:12px;border:1px solid var(--border);border-radius:7px;padding:7px 10px;background:var(--bg);color:var(--text);cursor:pointer;outline:none;margin-bottom:.5rem;">
+      <option value="sigmoid">Sigmoid — σ(x)</option>
+      <option value="tanh">Tanh — tanh(x)</option>
+      <option value="relu">ReLU — max(0,x)</option>
+      <option value="leaky_relu">Leaky ReLU</option>
+      <option value="linear" selected>Linear — x</option>
+    </select>
+    <div id="output-act-formula" style="font-family:var(--mono);font-size:10px;color:var(--green);padding:4px 6px;background:var(--green-lt);border-radius:5px;text-align:center;margin-bottom:.6rem;">f(x) = x</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;" id="out-chart-title">Saída: f(x) = x — Linear</div>
+    <canvas id="out-canvas" height="80" style="display:block;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></canvas>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;text-align:center" id="out-chart-formula">f(x) = x</div>
+  </div>
+  <div class="ctrl-card">
+    <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'sel-loss')">Função de erro (Loss)</label>
+    <select id="sel-loss" onchange="onLossChange()" style="width:100%;font-family:var(--mono);font-size:12px;border:1px solid var(--border);border-radius:7px;padding:7px 10px;background:var(--bg);color:var(--text);cursor:pointer;outline:none;margin-bottom:.5rem;">
+      <option value="mse">MSE — Erro Quadrático Médio</option>
+      <option value="mae">MAE — Erro Absoluto Médio</option>
+      <option value="bce">BCE — Entropia Cruzada Binária</option>
+      <option value="huber">Huber Loss</option>
+    </select>
+    <div id="loss-formula" style="font-family:var(--mono);font-size:10px;color:var(--amber);padding:4px 6px;background:var(--amber-lt);border-radius:5px;text-align:center;margin-bottom:.6rem;">L = ½·(ŷ − y)²</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;">Gráfico da função de erro</div>
+    <canvas id="loss-canvas" height="80" style="display:block;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></canvas>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:5px;text-align:right" id="loss-note">aguardando treino...</div>
+  </div>
+</div>
+
+<!-- Input value sliders (generated dynamically) -->
+<div class="ctrl-card" id="input-sliders-wrap" style="margin-bottom:1.5rem;">
+  <label class="tooltip-label" tabindex="0" role="button" onclick="mostrarTooltip(event, 'input-values')">Valores de entrada (x)</label>
+  <div id="input-sliders"></div>
+</div>
+
+<div class="main">
+  <div>
+    <div class="phase-bar">
+      <div class="phase-pill" id="ph-fwd"><span class="num">①</span>Forward</div>
+      <div class="phase-pill" id="ph-loss"><span class="num">②</span>Loss</div>
+      <div class="phase-pill" id="ph-back"><span class="num">③</span>Backprop</div>
+      <div class="phase-pill" id="ph-upd"><span class="num">④</span>Update</div>
+    </div>
+
+    <div id="canvas-wrap">
+      <svg id="nsvg" viewBox="0 0 760 320"></svg>
+    </div>
+    <div class="scroll-note" style="margin-top:-.5rem;margin-bottom:.8rem;text-align:left;">Azul indica peso positivo, vermelho indica peso negativo e cinza indica peso muito próximo de zero. Os rótulos usam deslocamento automático para evitar sobreposição visual.</div>
+
+    <div class="metrics" style="grid-template-columns:repeat(5,1fr);">
+      <div class="metric"><div class="lbl">Época</div><div class="val" id="m-epoch">0</div></div>
+      <div class="metric"><div class="lbl">Saída desejada y</div><div class="val" id="m-target">—</div></div>
+      <div class="metric"><div class="lbl">Predição ŷ</div><div class="val" id="m-pred">—</div></div>
+      <div class="metric"><div class="lbl">Loss</div><div class="val" id="m-loss">—</div></div>
+      <div class="metric"><div class="lbl">Erro δ</div><div class="val" id="m-err">—</div></div>
+    </div>
+    <div class="info-grid" style="margin-bottom:1rem;">
+      <div class="info-pill"><div class="k">Melhor loss</div><div class="v" id="m-best-loss">—</div></div>
+      <div class="info-pill"><div class="k">Norma do gradiente</div><div class="v" id="m-grad">—</div></div>
+      <div class="info-pill"><div class="k">Loss anterior → atual</div><div class="v" id="m-loss-compare">—</div></div>
+      <div class="info-pill"><div class="k">Δ loss</div><div class="v" id="m-dloss">—</div></div>
+      <div class="info-pill"><div class="k">Taxa η</div><div class="v" id="m-lr-effect">—</div></div>
+      <div class="info-pill"><div class="k">Objetivo</div><div class="v" id="m-goal">Aguardando</div></div>
+      <div class="info-pill"><div class="k">Status</div><div class="v" id="m-status">Aguardando</div></div>
+      <div class="info-pill"><div class="k">Modo</div><div class="v" id="m-mode">Avançado</div></div>
+    </div>
+
+    <div class="step-explainer" id="step-explainer">
+      Ajuste a rede e execute um passo. Aqui aparecerá uma explicação curta do que aconteceu no treinamento.
+    </div>
+
+    <div class="card">
+      <div class="card-title">Hiperparâmetros de treino</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:.75rem">
+        <div>
+          <label style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.4rem">Taxa η</label>
+          <div class="slider-row">
+            <input type="range" id="lr" min="0.01" max="0.9" step="0.01" value="0.3">
+            <span class="slider-val" id="lr-val">0.30</span>
+          </div>
+        </div>
+        <div>
+          <label style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.4rem">Alvo atual y</label>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-family:var(--mono);font-size:16px;color:var(--accent);text-align:center;" id="y-inline-display">0.8000</div>
+        </div>
+        <div>
+          <label style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.4rem">Velocidade</label>
+          <div class="slider-row">
+            <input type="range" id="anim-speed" min="1" max="5" step="1" value="3">
+            <span class="slider-val" id="v-speed" style="font-size:11px;min-width:48px">Média</span>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn step" id="btn-micro" onclick="advanceCalculationDetailed()">⟶ Avançar cálculo</button>
+        <button class="btn step" id="btn-step" onclick="stepOnce()">▶ Passo único</button>
+        <button class="btn run"  id="btn-run"  onclick="toggleRun()">⚡ 50 épocas</button>
+        <button class="btn"      id="btn-reset" onclick="resetNet()">↺ Reset</button>
+      </div>
+      <div class="tiny" style="margin-top:.55rem">
+        <strong>Avançar cálculo</strong> mostra microetapas do cálculo, conexão por conexão e neurônio por neurônio, com uma seta indicando onde a operação ocorre.
+        <strong>Passo único</strong> mantém o passo a passo original por fase do treino.
+      </div>
+    </div>
+
+    <div class="card-title" style="margin-bottom:.5rem;margin-top:.25rem" id="calc-title">Cálculo completo — ciclo de treino</div>
+    <div id="fullcalc">Pressione <strong>▶ Passo único</strong> para iniciar o ciclo...</div>
+  </div>
+
+  <div class="sidebar">
+    <div class="card">
+      <div class="card-title">Arquitetura atual</div>
+      <div class="arch-info" id="arch-info">—</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Valores atuais de w e b</div>
+      <div class="tiny" style="margin-bottom:.45rem">Atualizado a cada época. Azul indica peso positivo, vermelho indica peso negativo. A espessura da linha também sugere a magnitude do peso.</div><div id="w-wrap" style="max-height:360px;overflow-y:auto">
+        <table class="w-table"><thead><tr><th>Parâmetro</th><th>Valor</th><th>Mag.</th></tr></thead>
+        <tbody id="w-tbody"></tbody></table>
+      </div>
+    </div>
+    
+<div class="card">
+      <div class="card-title">Controles de w e b</div>
+      <div class="tiny" style="margin-bottom:.45rem">Ajuste manualmente os valores iniciais de cada peso w e de cada viés b. Cada parâmetro agora aparece em um bloco mais limpo, com nome, valor, controle e descrição.</div>
+      <div class="param-wrap" id="param-editor"></div>
+      <div class="param-actions">
+        <button class="param-btn" onclick="randomizeParameters()">Aleatorizar</button>
+        <button class="param-btn" onclick="zeroParameters()">Zerar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Progresso do aprendizado</div>
+      <div class="tiny">
+        <div style="display:flex;justify-content:space-between;gap:8px;"><span>Progresso do ciclo:</span><span id="train-progress-text" style="color:var(--text)">0%</span></div>
+        <div class="progress-bar" style="margin:.45rem 0 .65rem"><div class="progress-fill" id="train-progress-fill" style="width:0%"></div></div>
+        <div>Épocas concluídas: <span id="diag-done" style="color:var(--text)">0</span> / <span id="diag-total" style="color:var(--text)">0</span></div>
+        <div>Melhor loss: <span id="diag-best" style="color:var(--text)">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Evolução do erro</div>
+      <canvas id="error-canvas" height="90" style="display:block;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);"></canvas>
+      <div id="error-note" style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:5px;text-align:right">
+        aguardando treino...
+      </div>
+      <div class="tiny" style="margin-top:6px;">
+        O gráfico mostra a evolução do erro ao longo das épocas. Quando a curva quase para de cair, insistir em mais épocas pode virar teimosia algorítmica.
+      </div>
+    </div>
+
+<div class="card">
+      <div class="card-title">Diagnóstico do treino</div>
+      <div class="tiny">
+        <div>Última época registrada: <span id="diag-last" style="color:var(--text)">—</span></div>
+        <div>Tendência do erro: <span id="diag-trend" style="color:var(--text)">—</span></div>
+        <div>Convergência: <span id="diag-conv" style="color:var(--text)">—</span></div>
+        <div>Passos salvos: <span id="diag-count" style="color:var(--text)">0</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico por época <span class="badge">mais recente no topo</span></div>
+      <div class="history-wrap">
+        <table class="history-table">
+          <thead><tr><th>Época</th><th>Amostras</th><th>Saída média</th><th>Alvo médio</th><th>Erro</th><th>Comentário</th></tr></thead>
+          <tbody id="history-body"><tr><td colspan="6" style="color:var(--muted);padding:10px 8px;">Nenhuma época executada ainda.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="scroll-note" id="history-note">o histórico aparece após o update dos pesos</div>
+    </div>
+
+
+
+
+
+    <div class="card qa-card">
+      <div class="card-title">Tire suas dúvidas sobre o treinamento</div>
+      <div class="qa-box">
+        <div class="tiny" style="margin-bottom:.2rem;color:var(--accent);font-weight:600;">💡 Espaço para explorar dúvidas conceituais durante o treinamento</div>
+        <div class="tiny">Escreva uma pergunta curta sobre o que está acontecendo no treinamento. A resposta usa o estado atual da rede para explicar melhor.</div>
+        <input id="qa-input" class="qa-input" type="text" placeholder="Ex.: por que o erro aumentou?">
+        <div class="qa-chip-row">
+          <button class="qa-chip" onclick="askTrainingQuestion('o que é época?')">o que é época?</button>
+          <button class="qa-chip" onclick="askTrainingQuestion('por que o erro aumentou?')">por que o erro aumentou?</button>
+          <button class="qa-chip" onclick="askTrainingQuestion('o que faz a taxa de aprendizado?')">taxa de aprendizado</button>
+          <button class="qa-chip" onclick="askTrainingQuestion('o que significa gradiente?')">o que significa gradiente?</button>
+          <button class="qa-chip" onclick="askTrainingQuestion('por que a saída está longe do alvo?')">saída longe do alvo</button>
+        </div>
+        <div id="qa-answer" class="qa-answer">Faça uma pergunta. A resposta aparecerá aqui.</div>
+      </div>
+    </div>
+
+    
+
+  </div>
+</div>
+</div>
+
+<script>
+// ── Activation functions ──
+const ACTIVATIONS = {
+  sigmoid: {
+    name: 'Sigmoid',
+    formula: 'σ(x) = 1 / (1 + e⁻ˣ)',
+    shortFormula: 'σ(x)',
+    f: x => 1/(1+Math.exp(-x)),
+    df: a => a*(1-a),   // derivative in terms of activation output
+    dfIsOfA: true,      // df takes activation value, not z
+    range: [-6, 6],
+    yRange: [-0.1, 1.1]
+  },
+  tanh: {
+    name: 'Tanh',
+    formula: 'tanh(x) = (eˣ − e⁻ˣ) / (eˣ + e⁻ˣ)',
+    shortFormula: 'tanh(x)',
+    f: x => Math.tanh(x),
+    df: a => 1 - a*a,
+    dfIsOfA: true,
+    range: [-4, 4],
+    yRange: [-1.1, 1.1]
+  },
+  relu: {
+    name: 'ReLU',
+    formula: 'ReLU(x) = max(0, x)',
+    shortFormula: 'max(0,x)',
+    f: x => Math.max(0, x),
+    df: (_a, z) => z > 0 ? 1 : 0,
+    dfIsOfA: false,
+    range: [-4, 4],
+    yRange: [-0.1, 4.1]
+  },
+  leaky_relu: {
+    name: 'Leaky ReLU',
+    formula: 'LReLU(x) = x > 0 ? x : 0.01x',
+    shortFormula: 'LReLU(x)',
+    f: x => x > 0 ? x : 0.01*x,
+    df: (_a, z) => z > 0 ? 1 : 0.01,
+    dfIsOfA: false,
+    range: [-4, 4],
+    yRange: [-0.5, 4.1]
+  },
+  linear: {
+    name: 'Linear',
+    formula: 'f(x) = x',
+    shortFormula: 'f(x) = x',
+    f: x => x,
+    df: () => 1,
+    dfIsOfA: false,
+    range: [-4, 4],
+    yRange: [-4.1, 4.1]
+  }
+};
+
+// ── Loss functions ──
+const LOSSES = {
+  mse: {
+    name: 'MSE',
+    formula: 'L = ½·(ŷ − y)²',
+    f: (yhat, y) => 0.5*(yhat-y)**2,
+    dOut: (yhat, y) => yhat - y   // ∂L/∂yhat
+  },
+  mae: {
+    name: 'MAE',
+    formula: 'L = |ŷ − y|',
+    f: (yhat, y) => Math.abs(yhat-y),
+    dOut: (yhat, y) => yhat > y ? 1 : -1
+  },
+  bce: {
+    name: 'BCE',
+    formula: 'L = −[y·log(ŷ) + (1−y)·log(1−ŷ)]',
+    f: (yhat, y) => {
+      const eps=1e-7;
+      const p=Math.min(Math.max(yhat,eps),1-eps);
+      return -(y*Math.log(p)+(1-y)*Math.log(1-p));
+    },
+    dOut: (yhat, y) => {
+      const eps=1e-7;
+      const p=Math.min(Math.max(yhat,eps),1-eps);
+      return (p-y)/(p*(1-p));
+    }
+  },
+  huber: {
+    name: 'Huber',
+    formula: 'L = ½·δ² se |e|≤1, senão |e|−½',
+    f: (yhat, y) => {
+      const e=yhat-y;
+      return Math.abs(e)<=1 ? 0.5*e*e : Math.abs(e)-0.5;
+    },
+    dOut: (yhat, y) => {
+      const e=yhat-y;
+      return Math.abs(e)<=1 ? e : Math.sign(e);
+    }
+  }
+};
+
+function getHiddenAct(){ return ACTIVATIONS[document.getElementById('sel-hidden-activation').value]; }
+function getOutputAct(){ return ACTIVATIONS[document.getElementById('sel-output-activation').value]; }
+function getLossFn(){ return LOSSES[document.getElementById('sel-loss').value]; }
+
+function onActivationChange(){
+  const hiddenAct=getHiddenAct();
+  const outputAct=getOutputAct();
+  document.getElementById('hidden-act-formula').textContent=hiddenAct.formula;
+  document.getElementById('output-act-formula').textContent=outputAct.formula;
+  document.getElementById('act-chart-title').textContent=`Ocultas: ${hiddenAct.shortFormula} — ${hiddenAct.name}`;
+  document.getElementById('act-chart-formula').textContent=hiddenAct.formula;
+  document.getElementById('out-chart-title').textContent=`Saída: ${outputAct.shortFormula} — ${outputAct.name}`;
+  document.getElementById('out-chart-formula').textContent=outputAct.formula;
+  document.getElementById('arch-label').innerHTML=
+    `Arquitetura: ${NET.arch?NET.arch.join(' → '):'—'}<br>Ativação oculta: ${hiddenAct.name} | Saída: ${outputAct.name}<br>Otimizador: SGD`;
+  drawActivationCharts();
+  buildNet();
+}
+
+function onLossChange(){
+  const loss=getLossFn();
+  document.getElementById('loss-formula').textContent=loss.formula;
+  document.getElementById('m-loss').textContent='—';
+  buildNet();
+}
+
+const fmt = (v,d=4) => (+v).toFixed(d);
+
+// ── State ──
+let NET={}, epoch=0, phase=0, lastFwd=null, lossHistory=[], epochHistory=[];
+let runTimer=null, runRemaining=0, bestLoss=Infinity;
+
+const COLORS={fwd:'#2563eb',back:'#dc2626',upd:'#059669',def:'#e2e5eb'};
+const SPEED_MS=[1200,600,300,150,60]; // index 0=slowest
+const SPEED_LABELS=['Lenta','Devagar','Média','Rápida','Turbo'];
+
+// ── Build network ──
+function buildNet(){
+  const nIn=+document.getElementById('n-inputs').value;
+  const nL=+document.getElementById('n-layers').value;
+  const hiddenSizes=getHiddenLayerSizes(nL);
+  const arch=[nIn,...hiddenSizes,1];
+  const W=[],b=[];
+  for(let l=0;l<arch.length-1;l++){
+    W.push(Array.from({length:arch[l+1]},()=>Array.from({length:arch[l]},()=>+(Math.random()*1.2-.6).toFixed(4))));
+    b.push(Array.from({length:arch[l+1]},()=>+(Math.random()*.4-.2).toFixed(4)));
+  }
+  NET={W,b,arch};
+  epoch=0; phase=0; lastFwd=null; lossHistory=[]; epochHistory=[]; bestLoss=Infinity;
+  stopRun();
+  document.getElementById('m-epoch').textContent='0';
+  document.getElementById('m-target').textContent=fmt(getY(),4);
+  document.getElementById('m-loss').textContent='—';
+  document.getElementById('m-pred').textContent='—';
+  document.getElementById('m-err').textContent='—';
+  const en=document.getElementById('error-note'); if(en) en.textContent='aguardando treino...';
+  document.getElementById('m-best-loss').textContent='—';
+  document.getElementById('m-grad').textContent='—';
+  document.getElementById('m-dloss').textContent='—';
+  document.getElementById('m-status').textContent='Aguardando';
+  document.getElementById('fullcalc').innerHTML='Rede reconstruída. Pressione <strong>▶ Passo único</strong> para iniciar.';
+  updateHistoryTable();
+  updateDiagnostics();
+  updateArchLabel();
+  drawNetwork();
+  applyWeightStyles();
+  updateWeightTable();
+  try{ drawErrorChart(); }catch(e){}
+  buildHiddenNeuronSliders();
+  buildInputSliders();
+}
+
+function updateArchLabel(){
+  const {arch}=NET;
+  const hiddenActName=getHiddenAct().name;
+  const outputActName=getOutputAct().name;
+  const lossName=getLossFn().name;
+  const hiddenDesc=arch.length>2 ? arch.slice(1,-1).join(', ') : '—';
+  document.getElementById('arch-label').innerHTML=`Arquitetura: ${arch.join(' → ')}<br>Ativação oculta: ${hiddenActName} | Saída: ${outputActName}<br>Otimizador: SGD`;
+  document.getElementById('arch-info').innerHTML=
+    `Layers: <span>${arch.length}</span><br>`+
+    `Entradas: <span>${arch[0]}</span><br>`+
+    `Camadas ocultas: <span>${arch.length-2}</span><br>`+
+    `Neurônios nas ocultas: <span>${hiddenDesc}</span><br>`+
+    `Saída: <span>${arch[arch.length-1]}</span><br>`+
+    `Ativação oculta: <span>${hiddenActName}</span><br>`+
+    `Ativação de saída: <span>${outputActName}</span><br>`+
+    `Loss: <span>${lossName}</span><br>`+
+    `Total pesos: <span>${NET.W.reduce((s,m)=>s+m.length*m[0].length,0)+NET.b.reduce((s,v)=>s+v.length,0)}</span>`;
+}
+
+// ── Forward pass ──
+function forward(inputs){
+  const {W,b}=NET;
+  const hiddenAct=getHiddenAct();
+  const outputAct=getOutputAct();
+  let a=inputs.slice();
+  const acts=[a.slice()],zs=[];
+  for(let l=0;l<W.length;l++){
+    const z=[],aNew=[];
+    for(let j=0;j<W[l].length;j++){
+      let zj=b[l][j];
+      for(let k=0;k<W[l][j].length;k++) zj+=W[l][j][k]*a[k];
+      z.push(zj);
+      const actFn = (l===W.length-1) ? outputAct : hiddenAct;
+      aNew.push(actFn.f(zj));
+    }
+    zs.push(z); acts.push(aNew.slice()); a=aNew;
+  }
+  return {acts,zs,yhat:a[0],inputs};
+}
+
+// ── Backprop ──
+function backprop(fwd,y){
+  const {W}=NET;
+  const {acts,zs,yhat}=fwd;
+  const hiddenAct=getHiddenAct();
+  const outputAct=getOutputAct();
+  const lossFn=getLossFn();
+  const nL=W.length;
+  const deltas=Array(nL).fill(null);
+
+  // Output layer delta: ∂L/∂yhat · ∂yhat/∂z
+  const dOut=lossFn.dOut(yhat,y);
+  deltas[nL-1]=acts[nL].map((a,j)=>{
+    const dact=outputAct.dfIsOfA ? outputAct.df(a) : outputAct.df(a, zs[nL-1][j]);
+    return dOut * dact;
+  });
+
+  // Hidden layers
+  for(let l=nL-2;l>=0;l--){
+    deltas[l]=acts[l+1].map((_,j)=>{
+      let d=0;
+      for(let k=0;k<W[l+1].length;k++) d+=W[l+1][k][j]*deltas[l+1][k];
+      const dact=hiddenAct.dfIsOfA ? hiddenAct.df(acts[l+1][j]) : hiddenAct.df(acts[l+1][j], zs[l][j]);
+      return d*dact;
+    });
+  }
+  const dW=W.map((mat,l)=>mat.map((row,j)=>row.map((_,k)=>deltas[l][j]*acts[l][k])));
+  const db=W.map((mat,l)=>mat.map((_,j)=>deltas[l][j]));
+  return {dW,db,deltas,err:yhat-y};
+}
+
+function applyGradients(bp,lr){
+  for(let l=0;l<NET.W.length;l++){
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++) NET.W[l][j][k]-=lr*bp.dW[l][j][k];
+      NET.b[l][j]-=lr*bp.db[l][j];
+    }
+  }
+}
+
+
+function getHiddenLayerSizes(nLayers){
+  const sizes=[];
+  for(let i=0;i<nLayers;i++) sizes.push(+(document.getElementById(`hidden-size-${i}`)?.value || 3));
+  return sizes;
+}
+
+function buildHiddenNeuronSliders(){
+  const nL=+document.getElementById('n-layers').value;
+  const container=document.getElementById('hidden-neuron-sliders');
+  if(!container) return;
+  const prev=[];
+  for(let i=0;i<5;i++){
+    const el=document.getElementById(`hidden-size-${i}`);
+    prev.push(el?+el.value:3);
+  }
+  container.innerHTML='';
+  for(let i=0;i<nL;i++){
+    const val=prev[i]||NET.arch?.[i+1]||3;
+    container.innerHTML += `
+      <div class="hidden-neuron-item">
+        <div class="hidden-neuron-head">
+          <span>Camada oculta <strong>${i+1}</strong></span>
+          <span class="slider-val" id="hidden-disp-${i}" style="font-size:13px;min-width:auto">${val}</span>
+        </div>
+        <div class="hidden-neuron-row">
+          <input type="range" id="hidden-size-${i}" min="1" max="10" step="1" value="${val}" oninput="document.getElementById('hidden-disp-${i}').textContent=this.value;buildNet();">
+        </div>
+      </div>`;
+  }
+}
+
+function buildInputSliders(){
+  const nIn=NET.arch[0];
+  const container=document.getElementById('input-sliders');
+  // Preserve existing values
+  const oldVals=[];
+  for(let i=0;i<20;i++){
+    const el=document.getElementById(`x-val-${i}`);
+    if(el) oldVals.push(parseFloat(el.value));
+  }
+  container.innerHTML='';
+  container.style.display='grid';
+  container.style.gridTemplateColumns=`repeat(${Math.min(nIn,5)},1fr)`;
+  container.style.gap='1rem';
+  container.style.marginTop='.5rem';
+  for(let i=0;i<nIn;i++){
+    const def=oldVals[i]!=null?oldVals[i]:+(0.3+i*0.15).toFixed(2);
+    const clamp=Math.min(1,Math.max(0,def));
+    container.innerHTML+=`
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;">x<sub>${i+1}</sub></div>
+        <div class="slider-row">
+          <input type="range" id="x-val-${i}" min="0" max="1" step="0.01" value="${clamp}"
+            oninput="document.getElementById('x-disp-${i}').textContent=parseFloat(this.value).toFixed(2)">
+          <span class="slider-val" id="x-disp-${i}" style="font-size:13px">${clamp.toFixed(2)}</span>
+        </div>
+      </div>`;
+  }
+}
+
+function getInputs(){
+  return Array.from({length:NET.arch[0]},(_,i)=>{
+    const el=document.getElementById(`x-val-${i}`);
+    return el ? +parseFloat(el.value).toFixed(2) : +(0.3+i*0.15).toFixed(2);
+  });
+}
+function getY(){ return +document.getElementById('ytarget').value; }
+function getLR(){ return +document.getElementById('lr').value; }
+function getEpochs(){ return +document.getElementById('n-epochs').value; }
+function getSpeedMs(){ return SPEED_MS[(+document.getElementById('anim-speed').value)-1]; }
+
+// ── STEP ONCE (passo a passo) ──
+function stepOnce(){
+  if(!NET.arch || !NET.arch.length) return;
+  stopRun(); // cancel batch if running
+
+  if(phase===0){
+    // ① FORWARD
+    const inputs=getInputs();
+    const fwd=forward(inputs);
+    lastFwd={inputs,y:getY(),fwd};
+    activatePhase('fwd');
+    highlightNet('fwd');
+
+    let html='<div class="fc-section"><span class="fc-head fwd">① Forward Pass</span>';
+    html+=`<span class="fc-line">Entradas: [${inputs.map(v=>fmt(v,2)).join(', ')}]</span>`;
+    for(let l=0;l<NET.W.length;l++){
+      html+=`<span class="fc-line" style="margin-top:6px"><strong>Layer ${l+1} (${l===NET.W.length-1?'Saída':'Oculta'})</strong></span>`;
+      for(let j=0;j<NET.W[l].length;j++){
+        const terms=NET.W[l][j].map((w,k)=>`${fmt(w,3)}·${fmt(fwd.acts[l][k],3)}`).join(' + ');
+        html+=`<span class="fc-line">z = ${terms} + ${fmt(NET.b[l][j],3)} = <span class="res">${fmt(fwd.zs[l][j],5)}</span></span>`;
+        html+=`<span class="fc-line">a = ${(l===NET.W.length-1?getOutputAct():getHiddenAct()).shortFormula.replace('x', fmt(fwd.zs[l][j],4))} = <span class="res">${fmt(fwd.acts[l+1][j],5)}</span></span>`;
+      }
+    }
+    html+=`<span class="fc-line" style="margin-top:4px"><strong>ŷ = <span class="res">${fmt(fwd.yhat,5)}</span></strong></span></div>`;
+    document.getElementById('fullcalc').innerHTML=html;
+    setMetrics(fwd.yhat,null,null);
+    updateNodeValues(fwd);
+    phase=1;
+
+  } else if(phase===1){
+    // ② LOSS
+    const {fwd,y}=lastFwd;
+    const lossFn=getLossFn();
+    const loss=lossFn.f(fwd.yhat,y);
+    const err=fwd.yhat-y;
+    lossHistory.push(loss);
+    activatePhase('loss');
+    highlightNet('def');
+
+    let html=document.getElementById('fullcalc').innerHTML;
+    html+=`<div class="fc-section"><span class="fc-head loss">② Cálculo do Erro — ${lossFn.name}</span>
+      <span class="fc-line">Fórmula: ${lossFn.formula}</span>
+      <span class="fc-line">L(${fmt(fwd.yhat,4)}, ${fmt(y,2)}) = <span class="res amber">${fmt(loss,6)}</span></span>
+      <span class="fc-line">∂L/∂ŷ = <span class="res amber">${fmt(lossFn.dOut(fwd.yhat,y),6)}</span></span>
+    </div>`;
+    document.getElementById('fullcalc').innerHTML=html;
+    document.getElementById('fullcalc').scrollTop=99999;
+    setMetrics(fwd.yhat,loss,err);
+    drawLossChart();
+  drawErrorChart();
+    phase=2;
+
+  } else if(phase===2){
+    // ③ BACKPROP
+    const {fwd,y}=lastFwd;
+    const bp=backprop(fwd,y);
+    lastFwd.bp=bp;
+    activatePhase('back');
+    animateBackprop();
+
+    const act=getHiddenAct();
+    const lossFn=getLossFn();
+    const nL=NET.W.length;
+
+    let html=document.getElementById('fullcalc').innerHTML;
+    html+=`<div class="fc-section"><span class="fc-head back">③ Backpropagation — Regra da Cadeia</span>`;
+
+    // ── Explanation box ──
+    html+=`<span class="fc-line" style="background:var(--red-lt);border-left:3px solid var(--red);padding:6px 10px;border-radius:4px;display:block;margin:6px 0;line-height:1.8">
+      <strong>Objetivo:</strong> calcular ∂L/∂w para cada peso w.<br>
+      Pela regra da cadeia: <strong>∂L/∂w<sub>jk</sub> = (∂L/∂ŷ) · (∂ŷ/∂z<sub>j</sub>) · (∂z<sub>j</sub>/∂w<sub>jk</sub>)</strong><br>
+      onde z<sub>j</sub> = Σ w<sub>jk</sub>·a<sub>k</sub> + b<sub>j</sub> e a<sub>j</sub> = f(z<sub>j</sub>)
+    </span>`;
+
+    // ── Output layer ──
+    const outL = nL - 1;
+    html+=`<span class="fc-line" style="margin-top:10px;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:4px"><strong>▶ Camada de Saída (Layer ${outL+1})</strong></span>`;
+
+    const dLdyhat = lossFn.dOut(fwd.yhat, y);
+    html+=`<span class="fc-line" style="margin-top:4px">
+      <strong>Passo 1 — ∂L/∂ŷ (derivada da loss em relação à saída):</strong>
+    </span>`;
+    if(lossFn.name==='MSE'){
+      html+=`<span class="fc-line" style="padding-left:20px">L = ½·(ŷ−y)²  →  ∂L/∂ŷ = (ŷ−y) = ${fmt(fwd.yhat,4)} − ${fmt(y,2)} = <span class="res red">${fmt(dLdyhat,6)}</span></span>`;
+    } else if(lossFn.name==='MAE'){
+      html+=`<span class="fc-line" style="padding-left:20px">L = |ŷ−y|  →  ∂L/∂ŷ = sign(ŷ−y) = <span class="res red">${fmt(dLdyhat,6)}</span></span>`;
+    } else if(lossFn.name==='BCE'){
+      html+=`<span class="fc-line" style="padding-left:20px">L = −[y·log(ŷ)+(1−y)·log(1−ŷ)]  →  ∂L/∂ŷ = (ŷ−y)/(ŷ·(1−ŷ)) = <span class="res red">${fmt(dLdyhat,6)}</span></span>`;
+    } else {
+      html+=`<span class="fc-line" style="padding-left:20px">∂L/∂ŷ = <span class="res red">${fmt(dLdyhat,6)}</span></span>`;
+    }
+
+    for(let j=0;j<NET.W[outL].length;j++){
+      const a_j = fwd.acts[nL][j];
+      const z_j = fwd.zs[outL][j];
+      const dact = act.dfIsOfA ? act.df(a_j) : act.df(a_j, z_j);
+      html+=`<span class="fc-line" style="margin-top:6px"><strong>Neurônio j=${j+1}:</strong></span>`;
+
+      html+=`<span class="fc-line" style="padding-left:12px">
+        <strong>Passo 2 — ∂a<sub>${j+1}</sub>/∂z<sub>${j+1}</sub> (derivada da ativação):</strong>
+      </span>`;
+      if(act.name==='Sigmoid'){
+        html+=`<span class="fc-line" style="padding-left:24px">σ'(z) = σ(z)·(1−σ(z)) = ${fmt(a_j,5)}·(1−${fmt(a_j,5)}) = ${fmt(a_j,5)}·${fmt(1-a_j,5)} = <span class="res red">${fmt(dact,6)}</span></span>`;
+      } else if(act.name==='Tanh'){
+        html+=`<span class="fc-line" style="padding-left:24px">tanh'(z) = 1−tanh²(z) = 1−${fmt(a_j*a_j,5)} = <span class="res red">${fmt(dact,6)}</span></span>`;
+      } else if(act.name==='ReLU'){
+        html+=`<span class="fc-line" style="padding-left:24px">ReLU'(z) = ${z_j>0?'1 (z>0)':'0 (z≤0)'}, z=${fmt(z_j,4)} → <span class="res red">${fmt(dact,6)}</span></span>`;
+      } else if(act.name==='Leaky ReLU'){
+        html+=`<span class="fc-line" style="padding-left:24px">LReLU'(z) = ${z_j>0?'1 (z>0)':'0.01 (z≤0)'}, z=${fmt(z_j,4)} → <span class="res red">${fmt(dact,6)}</span></span>`;
+      } else {
+        html+=`<span class="fc-line" style="padding-left:24px">f'(z) = <span class="res red">${fmt(dact,6)}</span></span>`;
+      }
+
+      html+=`<span class="fc-line" style="padding-left:12px;margin-top:2px">
+        <strong>δ<sub>${outL+1},${j+1}</sub> = ∂L/∂ŷ · ∂a/∂z = ${fmt(dLdyhat,5)} · ${fmt(dact,5)} = <span class="res red">${fmt(bp.deltas[outL][j],6)}</span></strong>
+      </span>`;
+
+      for(let k=0;k<NET.W[outL][j].length;k++){
+        const a_prev = fwd.acts[outL][k];
+        html+=`<span class="fc-line" style="padding-left:12px">
+          Passo 3 — ∂z/∂w<sub>${j+1},${k+1}</sub> = a<sub>prev,${k+1}</sub> = ${fmt(a_prev,5)}<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;∂L/∂w<sub>${outL+1},${j+1},${k+1}</sub> = δ · a<sub>prev</sub> = ${fmt(bp.deltas[outL][j],5)} · ${fmt(a_prev,5)} = <span class="res red">${fmt(bp.dW[outL][j][k],6)}</span>
+        </span>`;
+      }
+      html+=`<span class="fc-line" style="padding-left:12px">∂L/∂b<sub>${outL+1},${j+1}</sub> = δ (∂z/∂b=1) = <span class="res red">${fmt(bp.db[outL][j],6)}</span></span>`;
+    }
+
+    // ── Hidden layers (back to front) ──
+    for(let l=nL-2;l>=0;l--){
+      html+=`<span class="fc-line" style="margin-top:12px;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:4px"><strong>▶ Camada Oculta ${l+1} (Layer ${l+1})</strong></span>`;
+      html+=`<span class="fc-line" style="background:var(--red-lt);border-left:3px solid var(--red);padding:5px 10px;border-radius:4px;display:block;margin:5px 0;line-height:1.7;font-size:11px">
+        Camadas ocultas: δ<sub>l,j</sub> = (Σ<sub>k</sub> w<sub>l+1,k,j</sub>·δ<sub>l+1,k</sub>) · f'(z<sub>l,j</sub>)<br>
+        <em>O erro é "propagado de volta" ponderado pelos pesos da camada seguinte.</em>
+      </span>`;
+
+      for(let j=0;j<NET.W[l].length;j++){
+        const a_j = fwd.acts[l+1][j];
+        const z_j = fwd.zs[l][j];
+        const dact = act.dfIsOfA ? act.df(a_j) : act.df(a_j, z_j);
+
+        // Sum of weighted deltas from next layer
+        let sumTerms = [];
+        let sumVal = 0;
+        for(let k=0;k<NET.W[l+1].length;k++){
+          const contrib = NET.W[l+1][k][j] * bp.deltas[l+1][k];
+          sumTerms.push(`${fmt(NET.W[l+1][k][j],4)}·${fmt(bp.deltas[l+1][k],4)}`);
+          sumVal += contrib;
+        }
+
+        html+=`<span class="fc-line" style="margin-top:6px"><strong>Neurônio j=${j+1}:</strong></span>`;
+        html+=`<span class="fc-line" style="padding-left:12px">
+          <strong>Passo A — Σ pesos × deltas da camada seguinte:</strong><br>
+          &nbsp;&nbsp;Σ = ${sumTerms.join(' + ')} = <span class="res red">${fmt(sumVal,6)}</span>
+        </span>`;
+        html+=`<span class="fc-line" style="padding-left:12px">
+          <strong>Passo B — derivada da ativação f'(z<sub>${j+1}</sub>):</strong>
+        </span>`;
+        if(act.name==='Sigmoid'){
+          html+=`<span class="fc-line" style="padding-left:24px">σ(z)·(1−σ(z)) = ${fmt(a_j,5)}·${fmt(1-a_j,5)} = <span class="res red">${fmt(dact,6)}</span></span>`;
+        } else if(act.name==='Tanh'){
+          html+=`<span class="fc-line" style="padding-left:24px">1−tanh²(z) = 1−${fmt(a_j*a_j,5)} = <span class="res red">${fmt(dact,6)}</span></span>`;
+        } else if(act.name==='ReLU'){
+          html+=`<span class="fc-line" style="padding-left:24px">z=${fmt(z_j,4)} → ReLU'=${z_j>0?'1':'0'} = <span class="res red">${fmt(dact,6)}</span></span>`;
+        } else if(act.name==='Leaky ReLU'){
+          html+=`<span class="fc-line" style="padding-left:24px">z=${fmt(z_j,4)} → LReLU'=${z_j>0?'1':'0.01'} = <span class="res red">${fmt(dact,6)}</span></span>`;
+        } else {
+          html+=`<span class="fc-line" style="padding-left:24px">f'(z) = <span class="res red">${fmt(dact,6)}</span></span>`;
+        }
+        html+=`<span class="fc-line" style="padding-left:12px;margin-top:2px">
+          <strong>δ<sub>${l+1},${j+1}</sub> = Σ × f'(z) = ${fmt(sumVal,5)} × ${fmt(dact,5)} = <span class="res red">${fmt(bp.deltas[l][j],6)}</span></strong>
+        </span>`;
+
+        for(let k=0;k<NET.W[l][j].length;k++){
+          const a_prev = fwd.acts[l][k];
+          html+=`<span class="fc-line" style="padding-left:12px">
+            ∂L/∂w<sub>${l+1},${j+1},${k+1}</sub> = δ · a<sub>prev,${k+1}</sub> = ${fmt(bp.deltas[l][j],5)} · ${fmt(a_prev,5)} = <span class="res red">${fmt(bp.dW[l][j][k],6)}</span>
+          </span>`;
+        }
+        html+=`<span class="fc-line" style="padding-left:12px">∂L/∂b<sub>${l+1},${j+1}</sub> = δ = <span class="res red">${fmt(bp.db[l][j],6)}</span></span>`;
+      }
+    }
+
+    html+=`</div>`;
+    document.getElementById('fullcalc').innerHTML=html;
+    document.getElementById('fullcalc').scrollTop=99999;
+    phase=3;
+
+  } else if(phase===3){
+    // ④ UPDATE
+    const {fwd,bp}=lastFwd;
+    const lr=getLR();
+    activatePhase('upd');
+
+    let html=document.getElementById('fullcalc').innerHTML;
+    html+=`<div class="fc-section"><span class="fc-head upd">④ Cálculo do Gradiente Descendente — Atualização de Pesos (η=${fmt(lr,2)})</span>`;
+    html+=`<span class="fc-line" style="background:var(--green-lt);border-left:3px solid var(--green);padding:6px 10px;border-radius:4px;display:block;margin:6px 0;line-height:1.8">
+      <strong>Gradiente Descendente (SGD):</strong> w ← w − η · ∂L/∂w &nbsp;|&nbsp; b ← b − η · ∂L/∂b<br>
+      <em>Cada peso é ajustado na direção oposta ao gradiente, com passo η=${fmt(lr,2)}.</em>
+    </span>`;
+    for(let l=0;l<NET.W.length;l++){
+      html+=`<span class="fc-line" style="margin-top:8px;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:4px"><strong>▶ Layer ${l+1}</strong></span>`;
+      for(let j=0;j<NET.W[l].length;j++){
+        html+=`<span class="fc-line" style="margin-top:4px"><strong>Neurônio j=${j+1}:</strong></span>`;
+        for(let k=0;k<NET.W[l][j].length;k++){
+          const old=NET.W[l][j][k];
+          const grad=bp.dW[l][j][k];
+          const step=+(lr*grad).toFixed(5);
+          NET.W[l][j][k]=+(old-lr*grad).toFixed(5);
+          html+=`<span class="fc-line" style="padding-left:12px">w<sub>${l+1},${j+1},${k+1}</sub>: ${fmt(old,5)} − ${fmt(lr,2)}·(${fmt(grad,5)}) = ${fmt(old,5)} − ${fmt(step,5)} = <span class="res green">${fmt(NET.W[l][j][k],5)}</span></span>`;
+        }
+        const oldB=NET.b[l][j];
+        const gradB=bp.db[l][j];
+        const stepB=+(lr*gradB).toFixed(5);
+        NET.b[l][j]=+(oldB-lr*gradB).toFixed(5);
+        html+=`<span class="fc-line" style="padding-left:12px">b<sub>${l+1},${j+1}</sub>: ${fmt(oldB,5)} − ${fmt(lr,2)}·(${fmt(gradB,5)}) = ${fmt(oldB,5)} − ${fmt(stepB,5)} = <span class="res green">${fmt(NET.b[l][j],5)}</span></span>`;
+      }
+    }
+    html+=`<span class="fc-line" style="margin-top:8px;color:var(--green)">✓ Gradiente Descendente aplicado! Ciclo completo. Clique novamente para o próximo.</span></div>`;
+    document.getElementById('fullcalc').innerHTML=html;
+    document.getElementById('fullcalc').scrollTop=99999;
+    updateWeightTable(); updateWeightLabels();
+    epoch++;
+    document.getElementById('m-epoch').textContent=epoch;
+    const currentLoss=getLossFn().f(lastFwd.fwd.yhat,lastFwd.y);
+    const currentGrad=gradNorm(bp);
+    pushEpochHistory({epoch,samples:1,pred:lastFwd.fwd.yhat,target:lastFwd.y,loss:currentLoss,err:bp.err,grad:currentGrad,lr,comment:learningComment(bp.err,currentLoss)});
+    updateTrainingProgress(epoch, getEpochs());
+    lossHistory.push(currentLoss);
+    bestLoss=Math.min(bestLoss,currentLoss);
+    updateExtraMetrics(currentLoss,currentGrad,bp.err);
+    drawLossChart();
+  drawErrorChart();
+    highlightNet('upd');
+    setTimeout(()=>highlightNet('def'),600);
+    phase=0;
+  }
+}
+
+// ── BATCH RUN (ciclo animado) ──
+function toggleRun(){
+  if(runTimer!==null){ stopRun(); return; }
+  runRemaining=getEpochs();
+  document.getElementById('btn-run').textContent='⏸ Pausar';
+  document.getElementById('btn-run').className='btn pause';
+  phase=0; lastFwd=null;
+  runTick();
+}
+
+function stopRun(){
+  if(runTimer!==null){ clearTimeout(runTimer); runTimer=null; }
+  const n=getEpochs();
+  document.getElementById('btn-run').textContent=`⚡ ${n} época${n===1?'':'s'}`;
+  document.getElementById('btn-run').className='btn run';
+}
+
+function runTick(){
+  if(runRemaining<=0){
+    stopRun();
+    const fwd2=forward(getInputs());
+    const y=getY();
+    const loss2=getLossFn().f(fwd2.yhat,y);
+    document.getElementById('fullcalc').innerHTML=
+      `<div class="fc-section"><span class="fc-head upd">Treino concluído!</span>`+
+      `<span class="fc-line">Total épocas: <span class="res green">${epoch}</span></span>`+
+      `<span class="fc-line">Loss final (${getLossFn().name}): <span class="res amber">${fmt(loss2,6)}</span></span>`+
+      `<span class="fc-line">ŷ = <span class="res">${fmt(fwd2.yhat,5)}</span> | alvo = ${fmt(y,2)}</span>`+
+      `<span class="fc-line">Pressione <strong>▶ Passo único</strong> para novo ciclo detalhado.</span></div>`;
+    highlightNet('def');
+    return;
+  }
+
+  const y=getY(), lr=getLR();
+  const inputs=getInputs();
+  const fwd=forward(inputs);
+  const lossFn=getLossFn();
+  const loss=lossFn.f(fwd.yhat,y);
+  lossHistory.push(loss);
+  const bp=backprop(fwd,y);
+  applyGradients(bp,lr);
+  epoch++;
+  runRemaining--;
+
+  const total=getEpochs();
+  const done=total-runRemaining;
+  const pct=Math.round((done/total)*100);
+
+  setMetrics(fwd.yhat,loss,fwd.yhat-y);
+  const currentGrad=gradNorm(bp);
+  pushEpochHistory({epoch,samples:1,pred:fwd.yhat,target:y,loss,err:bp.err,grad:currentGrad,lr,comment:learningComment(bp.err,loss)});
+  updateTrainingProgress(done,total);
+  bestLoss=Math.min(bestLoss,loss);
+  updateExtraMetrics(loss,currentGrad,bp.err);
+  updateWeightTable(); updateWeightLabels(); updateNodeValues(fwd); drawLossChart();
+  document.getElementById('m-epoch').textContent=epoch;
+
+  document.getElementById('fullcalc').innerHTML=
+    `<div class="fc-section"><span class="fc-head upd">Treinando... ${done}/${total}</span>`+
+    `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`+
+    `<span class="fc-line">Loss: <span class="res amber">${fmt(loss,6)}</span></span>`+
+    `<span class="fc-line">ŷ = <span class="res">${fmt(fwd.yhat,5)}</span> | alvo = ${fmt(y,2)}</span>`+
+    `<span class="fc-line" style="color:var(--muted)">Restam: ${runRemaining} épocas</span></div>`;
+
+  // Animate: forward blue → backprop red
+  const spd=getSpeedMs();
+  highlightNet('fwd');
+  activatePhase('fwd');
+  setTimeout(()=>{
+    activatePhase('back');
+    animateBackprop(()=>{
+      activatePhase('upd');
+      highlightNet('upd');
+      runTimer=setTimeout(()=>{ highlightNet('def'); runTick(); }, Math.max(40,spd*0.2));
+    });
+  }, spd*0.35);
+}
+
+function resetNet(){ buildNet(); }
+
+// ── Metrics ──
+function setMetrics(pred,loss,err){
+  document.getElementById('m-target').textContent=fmt(getY(),4);
+  document.getElementById('m-pred').textContent=pred!=null?fmt(pred,4):'—';
+  document.getElementById('m-loss').textContent=loss!=null?fmt(loss,5):'—';
+  document.getElementById('m-err').textContent=err!=null?fmt(err,4):'—';
+}
+
+// ── Phase pill ──
+function activatePhase(p){
+  const map={fwd:'ph-fwd',loss:'ph-loss',back:'ph-back',upd:'ph-upd'};
+  ['ph-fwd','ph-loss','ph-back','ph-upd'].forEach(id=>document.getElementById(id).className='phase-pill');
+  if(map[p]) document.getElementById(map[p]).classList.add('ph-'+p);
+}
+
+// ── Highlight all nodes/edges ──
+
+function highlightNet(ph){
+  const {arch}=NET;
+  const c=ph==='fwd'?COLORS.fwd:ph==='back'?COLORS.back:ph==='upd'?COLORS.upd:COLORS.def;
+  const sw=ph==='def'?'1.2':'2.2';
+  const fill=ph==='def'?'#ffffff':c+'18';
+
+  for(let l=0;l<arch.length;l++){
+    for(let j=0;j<arch[l];j++){
+      const n=document.getElementById(`n-${l}-${j}`);
+      if(n){
+        n.setAttribute('stroke', ph==='def' ? '#cfd4de' : c);
+        n.setAttribute('stroke-width', sw);
+        n.setAttribute('fill', fill);
+      }
+    }
+  }
+
+  if(ph === 'def'){
+    applyWeightStyles();
+    return;
+  }
+
+  for(let l=0;l<arch.length-1;l++){
+    for(let j=0;j<arch[l+1];j++){
+      for(let k=0;k<arch[l];k++){
+        const e=document.getElementById(`e-${l}-${j}-${k}`);
+        if(e){
+          e.setAttribute('stroke', c);
+          e.setAttribute('stroke-width', '2');
+          e.setAttribute('opacity', '1');
+        }
+      }
+    }
+  }
+}
+
+
+// ── Animate backprop (right to left) ──
+function animateBackprop(onDone){
+  const {arch}=NET;
+  const nL=arch.length;
+  const spd=getSpeedMs();
+  const delay=Math.max(50,spd*0.22);
+
+  // Reset first
+  highlightNet('def');
+
+  for(let step=0;step<nL;step++){
+    const l=nL-1-step;
+    setTimeout(()=>{
+      for(let j=0;j<arch[l];j++){
+        const n=document.getElementById(`n-${l}-${j}`);
+        if(n){n.setAttribute('stroke',COLORS.back);n.setAttribute('stroke-width','2.5');n.setAttribute('fill',COLORS.back+'22');}
+      }
+      if(l>0) for(let j=0;j<arch[l];j++) for(let k=0;k<arch[l-1];k++){
+        const e=document.getElementById(`e-${l-1}-${j}-${k}`);
+        if(e){e.setAttribute('stroke',COLORS.back);e.setAttribute('stroke-width','2');e.setAttribute('opacity','1');}
+      }
+      if(step===nL-1) setTimeout(()=>{ if(onDone) onDone(); },delay);
+    },step*delay);
+  }
+}
+
+// ── Draw network SVG ──
+function drawNetwork(){
+  const {arch}=NET;
+  const svg=document.getElementById('nsvg');
+  const W=760,H=320,padX=60,padY=40;
+  const layerW=(W-padX*2)/(arch.length-1||1);
+  const maxN=Math.max(...arch);
+  const nodeR=Math.min(22,(H-padY*2)/(maxN*2.5));
+  const pos=[];
+
+  for(let l=0;l<arch.length;l++){
+    const x=padX+l*layerW;
+    pos.push(arch[l]===1?[{x,y:H/2}]:Array.from({length:arch[l]},(_,j)=>({x,y:padY+(H-padY*2)/(arch[l]+1)*(j+1)})));
+  }
+  NET.pos=pos;
+
+  let s=`<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="calc-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker></defs><g id="calc-overlay"></g>`;
+
+  for(let l=0;l<arch.length;l++){
+    const x=padX+l*layerW;
+    const lbl=l===0?'Entrada':l===arch.length-1?'Saída':`Oculta ${l}`;
+    s+=`<text x="${x}" y="16" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9" fill="#9ca3af" letter-spacing="1">${lbl.toUpperCase()}</text>`;
+  }
+
+  for(let l=0;l<arch.length-1;l++)
+    for(let j=0;j<arch[l+1];j++)
+      for(let k=0;k<arch[l];k++){
+        const p0=pos[l][k],p1=pos[l+1][j];
+        s+=`<line id="e-${l}-${j}-${k}" x1="${p0.x}" y1="${p0.y}" x2="${p1.x}" y2="${p1.y}" stroke="#e2e5eb" stroke-width="1" marker-end="url(#arr)" opacity="0.6"/>`;
+      }
+
+  const totalEdges=NET.W.reduce((s,m)=>s+m.length*m[0].length,0);
+  if(totalEdges<=24)
+    for(let l=0;l<NET.W.length;l++)
+      for(let j=0;j<NET.W[l].length;j++)
+        for(let k=0;k<NET.W[l][j].length;k++){
+          const p0=pos[l][k],p1=pos[l+1][j];
+          const mx=(p0.x+p1.x)/2, my=(p0.y+p1.y)/2;
+          const dx=p1.x-p0.x, dy=p1.y-p0.y;
+          const len=Math.hypot(dx,dy)||1;
+          const nx=-dy/len, ny=dx/len;
+          const spread=((j+k)%2===0?1:-1) * (6 + 2*Math.abs(j-k));
+          const tx=mx + nx*spread;
+          const ty=my + ny*spread;
+          s+=`<g id="wlg-${l}-${j}-${k}">
+            <rect x="${tx-15}" y="${ty-7}" width="30" height="14" rx="6" fill="#ffffff" fill-opacity="0.96" stroke="#eef0f4" stroke-width="0.6"></rect>
+            <text id="wl-${l}-${j}-${k}" x="${tx}" y="${ty+0.5}" text-anchor="middle" dominant-baseline="middle" font-family="'DM Mono',monospace" font-size="9" fill="#6b7280">${fmt(NET.W[l][j][k],2)}</text>
+          </g>`;
+        }
+
+  for(let l=0;l<arch.length;l++)
+    for(let j=0;j<arch[l];j++){
+      const {x,y}=pos[l][j];
+      const lbl=l===0?`x${j+1}`:l===arch.length-1?'ŷ':`h${l},${j+1}`;
+      s+=`<g id="ng-${l}-${j}">
+        <circle id="n-${l}-${j}" cx="${x}" cy="${y}" r="${nodeR}" fill="#ffffff" stroke="#e2e5eb" stroke-width="1.2"/>
+        <text x="${x}" y="${y-3}" text-anchor="middle" dominant-baseline="central" font-family="'Syne',sans-serif" font-size="${Math.max(8,nodeR*.6)}" font-weight="700" fill="#9ca3af">${lbl}</text>
+        <text id="tv-${l}-${j}" x="${x}" y="${y+nodeR*.55}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="${Math.max(7,nodeR*.5)}" fill="#7a7f90">—</text>
+      </g>`;
+    }
+
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=s;
+}
+
+function updateNodeValues(fwd){
+  const {arch}=NET;
+  fwd.inputs.forEach((v,k)=>{ const el=document.getElementById(`tv-0-${k}`); if(el) el.textContent=fmt(v,2); });
+  for(let l=1;l<arch.length;l++)
+    fwd.acts[l].forEach((v,j)=>{ const el=document.getElementById(`tv-${l}-${j}`); if(el) el.textContent=fmt(v,3); });
+}
+
+function updateWeightLabels(){
+  const total=NET.W.reduce((s,m)=>s+m.length*m[0].length,0);
+  if(total>24) return;
+  for(let l=0;l<NET.W.length;l++)
+    for(let j=0;j<NET.W[l].length;j++)
+      for(let k=0;k<NET.W[l][j].length;k++){
+        const el=document.getElementById(`wl-${l}-${j}-${k}`);
+        if(el) el.textContent=fmt(NET.W[l][j][k],2);
+      }
+}
+
+function updateWeightTable(){
+  let html='';
+  for(let l=0;l<NET.W.length;l++)
+    for(let j=0;j<NET.W[l].length;j++)
+      for(let k=0;k<NET.W[l][j].length;k++){
+        const v=NET.W[l][j][k],pct=Math.min(Math.abs(v)*55,100),c=v>=0?'var(--accent)':'var(--red)';
+        html+=`<tr><td class="muted">w<sub>${l+1},${j+1},${k+1}</sub></td><td style="color:${c}">${fmt(v,4)}</td><td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div></td></tr>`;
+      }
+  for(let l=0;l<NET.b.length;l++)
+    for(let j=0;j<NET.b[l].length;j++){
+      const v=NET.b[l][j],pct=Math.min(Math.abs(v)*55,100),c=v>=0?'#7c3aed':'#0891b2';
+      html+=`<tr><td class="muted">b<sub>${l+1},${j+1}</sub></td><td style="color:${c}">${fmt(v,4)}</td><td><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${c}"></div></div></td></tr>`;
+    }
+  document.getElementById('w-tbody').innerHTML=html;
+}
+
+
+function drawErrorChart(){
+  const c = document.getElementById('error-canvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+
+  const rect = c.getBoundingClientRect();
+  const w = Math.max(260, Math.round(rect.width || c.clientWidth || 300));
+  const h = Math.max(90, Math.round(rect.height || c.clientHeight || 90));
+  const DPR = window.devicePixelRatio || 1;
+
+  c.width = Math.round(w * DPR);
+  c.height = Math.round(h * DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,w,h);
+
+  const left = 34, top = 12, right = 12, bottom = 22;
+  const gw = w - left - right;
+  const gh = h - top - bottom;
+
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(left, top, gw, gh);
+
+  const values = Array.isArray(epochHistory) && epochHistory.length
+    ? [...epochHistory].slice().reverse().map(e => Math.abs(Number(e.err ?? 0)))
+    : [];
+
+  const note = document.getElementById('error-note');
+
+  if(!values.length){
+    ctx.fillStyle = '#64748b';
+    ctx.font = '11px monospace';
+    ctx.fillText('Treine algumas épocas para desenhar o erro.', left + 8, top + 22);
+    if(note) note.textContent = 'aguardando treino...';
+    return;
+  }
+
+  const maxV = Math.max(...values, 1e-9);
+  const minV = Math.min(...values, 0);
+  const span = Math.max(maxV - minV, 1e-9);
+
+  // guide lines
+  ctx.strokeStyle = '#eef2f7';
+  ctx.lineWidth = 1;
+  for(let i=1;i<=3;i++){
+    const y = top + gh * i / 4;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(left + gw, y);
+    ctx.stroke();
+  }
+
+  // y labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px monospace';
+  ctx.fillText(fmt(maxV,2), 4, top + 4);
+  ctx.fillText(fmt(minV,2), 4, top + gh + 4);
+
+  // line path
+  ctx.strokeStyle = '#dc2626';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = left + (values.length === 1 ? gw / 2 : gw * i / (values.length - 1));
+    const y = top + gh - ((v - minV) / span) * gh;
+    if(i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // points
+  ctx.fillStyle = '#dc2626';
+  values.forEach((v, i) => {
+    const x = left + (values.length === 1 ? gw / 2 : gw * i / (values.length - 1));
+    const y = top + gh - ((v - minV) / span) * gh;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // x-axis labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px monospace';
+  ctx.fillText('1', left, h - 6);
+  ctx.fillText(String(values.length), left + gw - 10, h - 6);
+
+  const current = values[values.length - 1];
+  const prev = values.length > 1 ? values[values.length - 2] : current;
+  const trend = current < prev ? '↓' : (current > prev ? '↑' : '→');
+  if(note) note.textContent = `erro atual: ${fmt(current,6)} ${trend}`;
+}
+
+function drawLossChart(){
+  const cv=document.getElementById('loss-canvas');
+  const W2=cv.offsetWidth*2||600; cv.width=W2; cv.height=180; cv.style.height='90px';
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W2,cv.height);
+  if(lossHistory.length===0) return;
+  if(lossHistory.length===1){
+    ctx.fillStyle='#2563eb'; ctx.beginPath(); ctx.arc(W2/2,cv.height/2,5,0,Math.PI*2); ctx.fill();
+    document.getElementById('loss-note').textContent=`min: ${fmt(lossHistory[0],5)}  |  atual: ${fmt(lossHistory[0],5)}`;
+    return;
+  }
+  const max=Math.max(...lossHistory),min=Math.min(...lossHistory),range=max-min||1;
+  const px=i=>(i/(lossHistory.length-1))*W2;
+  const py=v=>cv.height-14-((v-min)/range)*(cv.height-28);
+  const grad=ctx.createLinearGradient(0,0,0,cv.height);
+  grad.addColorStop(0,'rgba(37,99,235,0.15)');grad.addColorStop(1,'rgba(37,99,235,0)');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.moveTo(px(0),cv.height);
+  lossHistory.forEach((v,i)=>ctx.lineTo(px(i),py(v)));
+  ctx.lineTo(px(lossHistory.length-1),cv.height); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#2563eb'; ctx.lineWidth=2.5; ctx.lineJoin='round';
+  ctx.beginPath();
+  lossHistory.forEach((v,i)=>i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v)));
+  ctx.stroke();
+  document.getElementById('loss-note').textContent=`min: ${fmt(Math.min(...lossHistory),5)}  |  atual: ${fmt(lossHistory[lossHistory.length-1],5)}`;
+}
+
+function drawOneActivationChart(canvasId, act, color){
+  const cv=document.getElementById(canvasId);
+  if(!cv) return;
+  const W2=cv.offsetWidth*2||600; cv.width=W2; cv.height=160; cv.style.height='80px';
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W2,cv.height);
+
+  const [xMin,xMax]=act.range;
+  const [yMin,yMax]=act.yRange;
+  const px=x=>((x-xMin)/(xMax-xMin))*W2;
+  const py=y=>cv.height-((y-yMin)/(yMax-yMin))*cv.height;
+
+  ctx.strokeStyle='#e2e5eb'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,py(0));ctx.lineTo(W2,py(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(px(0),0);ctx.lineTo(px(0),cv.height);ctx.stroke();
+
+  ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineJoin='round';
+  ctx.beginPath();
+  for(let i=0;i<=W2;i++){
+    const x=xMin+(i/W2)*(xMax-xMin);
+    const y=act.f(x);
+    i===0?ctx.moveTo(i,py(y)):ctx.lineTo(i,py(y));
+  }
+  ctx.stroke();
+}
+
+function drawActivationCharts(){
+  drawOneActivationChart('sig-canvas', getHiddenAct(), '#2563eb');
+  drawOneActivationChart('out-canvas', getOutputAct(), '#059669');
+}
+
+
+function gradNorm(bp){
+  let s=0;
+  for(let l=0;l<bp.dW.length;l++) for(let j=0;j<bp.dW[l].length;j++) for(let k=0;k<bp.dW[l][j].length;k++) s+=bp.dW[l][j][k]**2;
+  for(let l=0;l<bp.db.length;l++) for(let j=0;j<bp.db[l].length;j++) s+=bp.db[l][j]**2;
+  return Math.sqrt(s);
+}
+
+function learningComment(err, loss){
+  const e=Math.abs(err);
+  if(e < 0.001) return 'Erro bem baixo';
+  if(e < 0.05) return 'Aprendendo';
+  if(e < 0.2) return 'Aproximando-se';
+  if(lossHistory.length>=1 && loss > lossHistory[lossHistory.length-1]) return 'Oscilando';
+  return 'Ainda longe do alvo';
+}
+
+function updateTrainingProgress(done=null,total=null){
+  const totalEpochs = total ?? getEpochs();
+  const completed = done ?? epoch;
+  const pct = totalEpochs>0 ? Math.max(0, Math.min(100, Math.round((completed/totalEpochs)*100))) : 0;
+  const fill=document.getElementById('train-progress-fill');
+  const text=document.getElementById('train-progress-text');
+  const doneEl=document.getElementById('diag-done');
+  const totalEl=document.getElementById('diag-total');
+  const bestEl=document.getElementById('diag-best');
+  if(fill) fill.style.width=`${pct}%`;
+  if(text) text.textContent=`${pct}%`;
+  if(doneEl) doneEl.textContent=String(completed);
+  if(totalEl) totalEl.textContent=String(totalEpochs);
+  if(bestEl) bestEl.textContent=bestLoss<Infinity?fmt(bestLoss,5):'—';
+}
+
+function pushEpochHistory(entry){
+  epochHistory.unshift(entry);
+  if(epochHistory.length>120) epochHistory.pop();
+  updateHistoryTable();
+  updateDiagnostics();
+  try{ drawErrorChart(); }catch(e){}
+  try{ drawLossChart(); }catch(e){}
+}
+
+function updateHistoryTable(){
+  const body=document.getElementById('history-body');
+  if(!body) return;
+  if(epochHistory.length===0){
+    body.innerHTML='<tr><td colspan="6" style="color:var(--muted);padding:10px 8px;">Nenhuma época executada ainda.</td></tr>';
+    document.getElementById('history-note').textContent='o histórico aparece após o update dos pesos';
+    return;
+  }
+  body.innerHTML=epochHistory.map(r=>`<tr><td>${r.epoch}</td><td>${r.samples ?? 1}</td><td>${fmt(r.pred,5)}</td><td>${fmt(r.target,5)}</td><td>${fmt(r.loss,6)}</td><td>${r.comment ?? '—'}</td></tr>`).join('');
+  const latest=epochHistory[0];
+  document.getElementById('history-note').textContent=`última atualização: época ${latest.epoch} · η=${fmt(latest.lr,2)} · y=${fmt(latest.target,2)} · grad=${fmt(latest.grad,4)}`;
+}
+
+function updateDiagnostics(){
+  document.getElementById('diag-count').textContent=String(epochHistory.length);
+  if(epochHistory.length===0){
+    document.getElementById('diag-last').textContent='—';
+    document.getElementById('diag-trend').textContent='—';
+    document.getElementById('diag-conv').textContent='—';
+    updateTrainingProgress(0, getEpochs());
+    return;
+  }
+  const last=epochHistory[0];
+  document.getElementById('diag-last').textContent=`época ${last.epoch} · loss ${fmt(last.loss,5)}`;
+  let trend='estável';
+  if(epochHistory.length>=2){
+    const d=epochHistory[0].loss-epochHistory[1].loss;
+    trend=d<0?'caindo':d>0?'subindo':'estável';
+  }
+  document.getElementById('diag-trend').textContent=trend;
+  let conv='em curso';
+  if(epochHistory.length>=5){
+    const recent=epochHistory.slice(0,5).map(x=>x.loss);
+    const amp=Math.max(...recent)-Math.min(...recent);
+    conv=amp<0.001?'quase convergiu':amp<0.01?'aproximando-se':'ainda ajustando';
+  }
+  document.getElementById('diag-conv').textContent=conv;
+  updateTrainingProgress(epoch, getEpochs());
+}
+
+function updateExtendedMetrics(loss,bp,err){
+  const g=bp?gradNorm(bp):null;
+  if(loss!=null){
+    bestLoss=Math.min(bestLoss, loss);
+    document.getElementById('m-best-loss').textContent=fmt(bestLoss,5);
+    const prev=lossHistory.length>=2?lossHistory[lossHistory.length-2]:null;
+    document.getElementById('m-dloss').textContent=prev!=null?fmt(loss-prev,5):'—';
+  } else {
+    document.getElementById('m-best-loss').textContent='—';
+    document.getElementById('m-dloss').textContent='—';
+  }
+  document.getElementById('m-grad').textContent=g!=null?fmt(g,5):'—';
+  if(err!=null && Math.abs(err)<0.02) document.getElementById('m-status').textContent='Erro muito baixo';
+  else if(g!=null && g<0.01) document.getElementById('m-status').textContent='Gradiente pequeno';
+  else if(loss!=null) document.getElementById('m-status').textContent='Treinando';
+  else document.getElementById('m-status').textContent='Aguardando';
+}
+
+// ── Slider events ──
+document.getElementById('n-inputs').oninput=function(){document.getElementById('v-inputs').textContent=this.value;buildNet();};
+document.getElementById('n-layers').oninput=function(){document.getElementById('v-layers').textContent=this.value;buildNet();};
+document.getElementById('lr').oninput=function(){document.getElementById('lr-val').textContent=parseFloat(this.value).toFixed(2);};
+document.getElementById('ytarget').oninput=function(){const v=parseFloat(this.value); document.getElementById('y-val').textContent=v.toFixed(2); const mt=document.getElementById('m-target'); if(mt) mt.textContent=v.toFixed(4); const yi=document.getElementById('y-inline-display'); if(yi) yi.textContent=v.toFixed(4);};
+document.getElementById('n-epochs').oninput=function(){
+  const v=+this.value;
+  document.getElementById('v-epochs').textContent=v;
+  if(runTimer===null) document.getElementById('btn-run').textContent=`⚡ ${v} época${v===1?'':'s'}`;
+};
+document.getElementById('anim-speed').oninput=function(){
+  document.getElementById('v-speed').textContent=SPEED_LABELS[+this.value-1];
+};
+
+window.addEventListener('resize',()=>{drawActivationCharts();drawLossChart();});
+
+buildNet();
+setTimeout(drawActivationCharts,120);
+
+const EXPLICACOES = {
+  "n-inputs": "Número de variáveis de entrada da rede. Cada entrada representa uma característica ou valor usado para produzir a saída.",
+  "n-layers": "Quantidade de camadas ocultas. Elas ficam entre a entrada e a saída e ajudam a rede a aprender relações mais complexas.",
+  "hidden-neurons": "Número de neurônios em cada camada oculta. Mais neurônios aumentam a capacidade da rede de representar padrões, mas também deixam o modelo mais complexo.",
+  "n-epochs": "Número de épocas por ciclo. Uma época corresponde a uma passada completa pelos dados de treino. Mais épocas significam mais tentativas de ajuste dos pesos.",
+  "ytarget": "Saída desejada, também chamada de alvo y. É o valor que a rede tenta aproximar durante o treinamento.",
+  "sel-hidden-activation": "Função de ativação usada nas camadas ocultas. Ela introduz não linearidade e permite que a rede aprenda padrões mais ricos do que uma simples relação linear.",
+  "sel-output-activation": "Função de ativação da camada de saída. Ela define a forma final da previsão da rede, por exemplo linear, sigmoide ou tanh.",
+  "sel-loss": "Função de erro, ou loss. Mede a diferença entre a saída produzida pela rede e o valor desejado. O treinamento tenta minimizar essa diferença.",
+  "input-values": "Valores de entrada x. São os dados que entram na rede para gerar a previsão."
+};
+
+let tooltipAtual = null;
+
+function fecharTooltip(){
+  if (tooltipAtual) {
+    tooltipAtual.remove();
+    tooltipAtual = null;
+  }
+}
+
+function mostrarTooltip(event, id){
+  event.stopPropagation();
+
+  if (tooltipAtual && tooltipAtual.dataset.key === id) {
+    fecharTooltip();
+    return;
+  }
+
+  fecharTooltip();
+
+  const texto = EXPLICACOES[id];
+  if (!texto) return;
+
+  const box = document.createElement('div');
+  box.className = 'tooltip-box';
+  box.dataset.key = id;
+  box.textContent = texto;
+  document.body.appendChild(box);
+
+  const rect = event.currentTarget.getBoundingClientRect();
+  const boxRect = box.getBoundingClientRect();
+
+  let left = rect.left + window.scrollX;
+  let top = rect.bottom + window.scrollY + 8;
+
+  const maxLeft = window.scrollX + window.innerWidth - boxRect.width - 12;
+  if (left > maxLeft) left = Math.max(window.scrollX + 12, maxLeft);
+
+  box.style.left = left + 'px';
+  box.style.top = top + 'px';
+
+  tooltipAtual = box;
+}
+
+document.addEventListener('click', function(e){
+  if (tooltipAtual && !e.target.closest('.tooltip-box') && !e.target.closest('.tooltip-label')) {
+    fecharTooltip();
+  }
+});
+
+
+let vozAtiva = null;
+let ultimoTextoFalado = '';
+let ultimoTempoFala = 0;
+
+function obterTextoExplicacao(id){
+  return (typeof EXPLICACOES !== 'undefined' && EXPLICACOES[id]) ? EXPLICACOES[id] : '';
+}
+
+function falarTexto(texto){ if(!VOZ_HABILITADA) return;
+  if (!('speechSynthesis' in window) || !texto) return;
+  const agora = Date.now();
+
+  // evita repetição obsessiva ao mover o mouse várias vezes
+  if (texto === ultimoTextoFalado && (agora - ultimoTempoFala) < 1800) return;
+
+  window.speechSynthesis.cancel();
+
+  const u = new SpeechSynthesisUtterance(texto);
+  u.lang = 'pt-BR';
+  u.rate = 1.0;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+
+  const vozes = window.speechSynthesis.getVoices();
+  const vozPt = vozes.find(v => /pt-BR/i.test(v.lang)) || vozes.find(v => /^pt/i.test(v.lang));
+  if (vozPt) u.voice = vozPt;
+
+  vozAtiva = u;
+  ultimoTextoFalado = texto;
+  ultimoTempoFala = agora;
+  window.speechSynthesis.speak(u);
+}
+
+function pararFala(){ if(!VOZ_HABILITADA) return;
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+}
+
+function anexarLeituraAosRotulos(){
+  const elementos = document.querySelectorAll('.tooltip-label');
+  elementos.forEach(el => {
+    if (el.dataset.ttsBound === '1') return;
+    el.dataset.ttsBound = '1';
+
+    let id = null;
+    const onclickAttr = el.getAttribute('onclick') || '';
+    const m = onclickAttr.match(/mostrarTooltip\(event, '([^']+)'\)/);
+    if (m) id = m[1];
+
+    if (!id) return;
+
+    const texto = obterTextoExplicacao(id);
+    if (!texto) return;
+
+    el.setAttribute('aria-label', el.textContent.trim() + '. ' + texto);
+    el.setAttribute('title', 'Passe o cursor ou use Tab para ouvir a explicação');
+
+    el.addEventListener('mouseenter', () => falarTexto(texto));
+    el.addEventListener('focus', () => falarTexto(texto));
+    el.addEventListener('mouseleave', () => pararFala());
+    el.addEventListener('blur', () => pararFala());
+
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        mostrarTooltip({ ...ev, currentTarget: el, stopPropagation: ()=>{} }, id);
+        falarTexto(texto);
+      }
+    });
+  });
+}
+
+window.speechSynthesis?.addEventListener?.('voiceschanged', () => {});
+document.addEventListener('DOMContentLoaded', anexarLeituraAosRotulos);
+setTimeout(anexarLeituraAosRotulos, 300);
+
+
+let VOZ_HABILITADA = true;
+
+function atualizarEstadoVoz(){
+  const chk = document.getElementById('voice-toggle');
+  VOZ_HABILITADA = !!chk?.checked;
+  const st = document.getElementById('voice-status');
+  if (st) st.textContent = VOZ_HABILITADA ? 'Ligada' : 'Desligada';
+  if (!VOZ_HABILITADA && ('speechSynthesis' in window)) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const chk = document.getElementById('voice-toggle');
+  if (chk) {
+    chk.addEventListener('change', atualizarEstadoVoz);
+    atualizarEstadoVoz();
+  }
+});
+
+
+let advancedMode = true;
+let prevLoss = null;
+
+function fmt2(v){ return (+v).toFixed(2); }
+
+function avaliarTaxaAprendizagem(lr){
+  if (lr < 0.08) return 'Baixa: aprendizado lento';
+  if (lr < 0.35) return 'Moderada: estável';
+  if (lr < 0.65) return 'Alta: pode oscilar';
+  return 'Muito alta: instável';
+}
+
+function interpretarPasso(yhat, y, loss, dloss, gradNorm, lr){
+  const err = yhat - y;
+  let msg = '';
+  if (Math.abs(err) < 0.05) {
+    msg += '<strong>Leitura do passo:</strong> <span class="good">a saída já está muito próxima do alvo.</span> ';
+  } else if (err > 0) {
+    msg += '<strong>Leitura do passo:</strong> a rede produziu uma saída <strong>maior</strong> que o alvo. ';
+  } else {
+    msg += '<strong>Leitura do passo:</strong> a rede produziu uma saída <strong>menor</strong> que o alvo. ';
+  }
+
+  if (dloss == null) {
+    msg += 'Ainda não há época anterior para comparação. ';
+  } else if (dloss < 0) {
+    msg += '<span class="good">O loss diminuiu</span>, então o ajuste foi na direção correta. ';
+  } else if (dloss > 0) {
+    msg += '<span class="bad">O loss aumentou</span>, sinal de oscilação ou passo excessivo. ';
+  } else {
+    msg += '<span class="warn">O loss praticamente não mudou</span>. ';
+  }
+
+  if (gradNorm < 0.01) {
+    msg += 'O gradiente está pequeno, sugerindo aproximação de um ponto de equilíbrio. ';
+  } else if (gradNorm > 1.2) {
+    msg += 'O gradiente está relativamente alto, então os pesos ainda estão sendo corrigidos com força. ';
+  } else {
+    msg += 'O gradiente está em faixa intermediária. ';
+  }
+
+  msg += 'Taxa de aprendizado: <strong>' + avaliarTaxaAprendizagem(lr) + '</strong>.';
+  return msg;
+}
+
+function atualizarModoAvancado(){
+  const chk = document.getElementById('advanced-toggle');
+  advancedMode = !!chk?.checked;
+  const st = document.getElementById('advanced-status');
+  const mm = document.getElementById('m-mode');
+  if (st) st.textContent = advancedMode ? 'Avançado' : 'Iniciante';
+  if (mm) mm.textContent = advancedMode ? 'Avançado' : 'Iniciante';
+
+  const full = document.getElementById('fullcalc');
+  const historyCard = document.getElementById('history-body')?.closest('.card');
+  const weightsCard = document.getElementById('w-wrap')?.closest('.card');
+  const diagCards = Array.from(document.querySelectorAll('.sidebar .card'));
+
+  if (full) {
+    full.style.display = advancedMode ? 'block' : 'none';
+  }
+  const calcTitle = document.getElementById('calc-title');
+  if (calcTitle) calcTitle.style.display = advancedMode ? 'block' : 'none';
+
+  // Keep progress/diagnóstico, but hide dense cards in beginner mode
+  if (weightsCard) weightsCard.style.display = advancedMode ? 'block' : 'none';
+  const historyWrap = document.querySelector('.history-wrap')?.closest('.card');
+  if (historyWrap) historyWrap.style.display = 'block';
+}
+
+function atualizarIndicadoresDidaticos(loss, gradNorm, lr){
+  const compare = document.getElementById('m-loss-compare');
+  const dlossEl = document.getElementById('m-dloss');
+  const lrEl = document.getElementById('m-lr-effect');
+  const goalEl = document.getElementById('m-goal');
+  const statusEl = document.getElementById('m-status');
+
+  if (compare) {
+    if (prevLoss == null) compare.textContent = '—';
+    else compare.textContent = `${fmt2(prevLoss)} → ${fmt2(loss)} ${loss < prevLoss ? '↓' : (loss > prevLoss ? '↑' : '→')}`;
+  }
+
+  const dloss = prevLoss == null ? null : (loss - prevLoss);
+  if (dlossEl) {
+    dlossEl.textContent = dloss == null ? '—' : `${dloss > 0 ? '+' : ''}${fmt2(dloss)}`;
+    dlossEl.className = 'v ' + (dloss == null ? '' : (dloss < 0 ? 'goal-ok' : (dloss > 0 ? 'goal-warn' : '')));
+  }
+
+  if (lrEl) lrEl.textContent = avaliarTaxaAprendizagem(lr);
+
+  if (goalEl) {
+    if (loss < 0.01) {
+      goalEl.textContent = '✔ Aproximação satisfatória';
+      goalEl.className = 'v goal-ok';
+    } else if (loss < 0.05) {
+      goalEl.textContent = 'Quase lá';
+      goalEl.className = 'v goal-warn';
+    } else {
+      goalEl.textContent = 'Ainda em ajuste';
+      goalEl.className = 'v';
+    }
+  }
+
+  if (statusEl) {
+    if (dloss == null) statusEl.textContent = 'Primeira avaliação';
+    else if (dloss < 0) statusEl.textContent = 'Melhorando';
+    else if (dloss > 0) statusEl.textContent = 'Oscilando';
+    else statusEl.textContent = 'Estável';
+  }
+
+  return dloss;
+}
+
+function colorirPesosNaTabela(){
+  const tbody = document.getElementById('w-tbody');
+  if (!tbody) return;
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const td = tr.children[1];
+    if (!td) return;
+    const v = parseFloat((td.textContent || '').replace(',', '.'));
+    td.style.color = isNaN(v) ? '' : (v >= 0 ? '#2563eb' : '#dc2626');
+    td.style.fontWeight = '600';
+  });
+}
+
+function atualizarExplicador(yhat, y, loss, gradNorm, lr, dloss){
+  const el = document.getElementById('step-explainer');
+  if (!el) return;
+  el.innerHTML = interpretarPasso(yhat, y, loss, dloss, gradNorm, lr);
+}
+
+
+function styleSingleWeightEdge(l,j,k){
+  if(!NET || !NET.W || !NET.W[l] || !NET.W[l][j]) return;
+  const w = NET.W[l][j][k];
+  const line = document.getElementById(`e-${l}-${j}-${k}`);
+  const text = document.getElementById(`wl-${l}-${j}-${k}`);
+  const box = document.querySelector(`#wlg-${l}-${j}-${k} rect`);
+
+  if(!line) return;
+
+  let color = '#9ca3af'; // quase neutro
+  if (w > 0.000001) color = '#2563eb';
+  else if (w < -0.000001) color = '#dc2626';
+
+  const mag = Math.max(1.2, Math.min(4.8, 1.2 + Math.abs(w) * 3.2));
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', mag.toFixed(2));
+  line.setAttribute('opacity', Math.abs(w) < 0.000001 ? '0.45' : '0.78');
+
+  if(text){
+    text.setAttribute('fill', color);
+    text.setAttribute('font-weight', '700');
+    text.textContent = fmt(w,2);
+  }
+  if(box){
+    box.setAttribute('fill', '#ffffff');
+    box.setAttribute('fill-opacity', '0.96');
+    box.setAttribute('stroke', '#e5e7eb');
+    box.setAttribute('stroke-width', '0.7');
+  }
+}
+
+function applyWeightStyles(){
+  if(!NET || !NET.W) return;
+  for(let l=0;l<NET.W.length;l++){
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++){
+        styleSingleWeightEdge(l,j,k);
+      }
+    }
+  }
+}
+
+function aplicarEstiloConexoes(){
+  applyWeightStyles();
+}
+
+
+function patchAfterDraw(){
+  try { applyWeightStyles(); } catch(e) {}
+  try { colorirPesosNaTabela(); } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const chk = document.getElementById('advanced-toggle');
+  if (chk) {
+    chk.addEventListener('change', atualizarModoAvancado);
+    atualizarModoAvancado();
+  }
+  setTimeout(patchAfterDraw, 400);
+});
+
+// Patch functions if present
+if (typeof drawNetwork === 'function') {
+  const _oldDrawNetwork = drawNetwork;
+  drawNetwork = function(...args){
+    const r = _oldDrawNetwork.apply(this, args);
+    setTimeout(patchAfterDraw, 10);
+    return r;
+  }
+}
+if (typeof updateWeightTable === 'function') {
+  const _oldUpdateWeightTable = updateWeightTable;
+  updateWeightTable = function(...args){
+    const r = _oldUpdateWeightTable.apply(this, args);
+    setTimeout(colorirPesosNaTabela, 10);
+    return r;
+  }
+}
+if (typeof setMetrics === 'function') {
+  const _oldSetMetrics = setMetrics;
+  setMetrics = function(yhat, loss, err, ...rest){
+    const r = _oldSetMetrics.apply(this, [yhat, loss, err, ...rest]);
+    const gradText = document.getElementById('m-grad')?.textContent || '0';
+    const gradNorm = parseFloat((gradText.match(/-?\d+(\.\d+)?/) || ['0'])[0]);
+    const lr = (typeof getLR === 'function') ? getLR() : 0.3;
+    if (loss != null) {
+      const dloss = atualizarIndicadoresDidaticos(loss, gradNorm || 0, lr);
+      const y = (typeof getY === 'function') ? getY() : 0;
+      atualizarExplicador(yhat, y, loss, gradNorm || 0, lr, dloss);
+      prevLoss = loss;
+    }
+    return r;
+  }
+}
+
+
+function atualizarTextoBotaoRun(){
+  const btn = document.getElementById('btn-run');
+  if (btn && typeof getEpochs === 'function') {
+    btn.textContent = `⚡ ${getEpochs()} épocas`;
+  }
+}
+document.addEventListener('DOMContentLoaded', atualizarTextoBotaoRun);
+['n-epochs'].forEach(id=>{
+  document.addEventListener('input', (e)=>{
+    if (e.target && e.target.id === id) atualizarTextoBotaoRun();
+  });
+});
+
+function runSingleEpoch(){
+  stopRun?.();
+  // Executa as 4 fases até completar 1 época
+  if (typeof phase !== 'undefined' && phase !== 0) {
+    while (phase !== 0) {
+      stepOnce();
+      if (typeof phase !== 'undefined' && phase === 0) break;
+    }
+    return;
+  }
+  stepOnce(); // forward
+  stepOnce(); // loss
+  stepOnce(); // backprop
+  stepOnce(); // update
+}
+
+function stepDetailed(){
+  stopRun?.();
+  stepOnce();
+  const labels = ['Forward executado', 'Loss calculada', 'Backprop calculado', 'Pesos atualizados'];
+  const expl = document.getElementById('step-explainer');
+  const currentPhase = (typeof phase !== 'undefined') ? phase : 0;
+  const idx = currentPhase === 0 ? 3 : currentPhase - 1;
+  if (expl) {
+    const base = expl.innerHTML;
+    expl.innerHTML = `<strong>Etapa detalhada:</strong> ${labels[idx]}.<br>` + base;
+  }
+}
+
+// Patch reset to also refresh detailed mode state if function exists
+if (typeof resetNet === 'function') {
+  const _oldResetNet = resetNet;
+  resetNet = function(...args){
+    const r = _oldResetNet.apply(this, args);
+    atualizarTextoBotaoRun();
+    const expl = document.getElementById('step-explainer');
+    if (expl) {
+      expl.innerHTML = 'Ajuste a rede e use <strong>Avançar cálculo</strong> para percorrer cada etapa, ou <strong>Passo único</strong> para executar uma época completa.';
+    }
+    return r;
+  }
+}
+
+// Patch buildNet to refresh helper text
+if (typeof buildNet === 'function') {
+  const _oldBuildNet = buildNet;
+  buildNet = function(...args){
+    const r = _oldBuildNet.apply(this, args);
+    atualizarTextoBotaoRun();
+    const expl = document.getElementById('step-explainer');
+    if (expl) {
+      expl.innerHTML = 'Rede pronta. Use <strong>Avançar cálculo</strong> para seguir etapa por etapa: Forward → Loss → Backprop → Update. Use <strong>Passo único</strong> para completar a época inteira.';
+    }
+    return r;
+  }
+}
+
+
+let MICRO = {active:false, index:0, steps:[], session:null, log:''};
+
+function clearCalcOverlay(){
+  const g = document.getElementById('calc-overlay');
+  if (g) g.innerHTML = '';
+}
+function resetMicroState(){
+  MICRO = {active:false, index:0, steps:[], session:null, log:''};
+  clearCalcOverlay();
+}
+function setPhaseByName(name){
+  if (name === 'forward') activatePhase('fwd');
+  else if (name === 'loss') activatePhase('loss');
+  else if (name === 'backprop') activatePhase('back');
+  else if (name === 'update') activatePhase('upd');
+}
+function placeCalcArrow(fromNode, toNode, color='#d97706'){
+  clearCalcOverlay();
+  const g = document.getElementById('calc-overlay');
+  if (!g || !NET.pos) return;
+  const p0 = NET.pos[fromNode.l][fromNode.j];
+  const p1 = NET.pos[toNode.l][toNode.j];
+  if (!p0 || !p1) return;
+  const dx = p1.x - p0.x, dy = p1.y - p0.y;
+  const len = Math.hypot(dx,dy) || 1;
+  const inset = 24;
+  const x1 = p0.x + dx/len * inset;
+  const y1 = p0.y + dy/len * inset;
+  const x2 = p1.x - dx/len * inset;
+  const y2 = p1.y - dy/len * inset;
+  g.innerHTML = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="3.2" marker-end="url(#calc-arr)" opacity="0.95"></line>`;
+}
+function highlightSpecificEdge(l,j,k,color='#d97706'){
+  highlightNet('def');
+  const edge = document.getElementById(`e-${l}-${j}-${k}`);
+  const from = document.getElementById(`n-${l}-${k}`);
+  const to = document.getElementById(`n-${l+1}-${j}`);
+  if (edge){
+    edge.setAttribute('stroke', color);
+    edge.setAttribute('stroke-width', '4');
+    edge.setAttribute('opacity', '1');
+  }
+  [from,to].forEach(n=>{
+    if(n){
+      n.setAttribute('stroke', color);
+      n.setAttribute('stroke-width', '3');
+      n.setAttribute('fill', color+'18');
+    }
+  });
+  placeCalcArrow({l:l,j:k},{l:l+1,j:j},color);
+}
+function highlightSpecificNode(l,j,color='#d97706'){
+  highlightNet('def');
+  clearCalcOverlay();
+  const node = document.getElementById(`n-${l}-${j}`);
+  if(node){
+    node.setAttribute('stroke', color);
+    node.setAttribute('stroke-width', '4');
+    node.setAttribute('fill', color+'18');
+  }
+}
+function microStepLine(text, cls=''){
+  return `<span class="fc-line ${cls}">${text}</span>`;
+}
+
+
+function activationExplain(act, z, a){
+  const zf = fmt(z,8), af = fmt(a,8);
+  if (act.name === 'Sigmoid') {
+    const em = Math.exp(-z);
+    return `Função de ativação: <span class="eq">σ(z) = 1/(1+e<sup>-z</sup>)</span>.<br>` +
+           `Substituindo: <span class="eq">σ(${zf}) = 1/(1+e<sup>-${zf}</sup>)</span>.<br>` +
+           `Como <span class="eq">e<sup>-${zf}</sup> ≈ ${fmt(em,8)}</span>, então <span class="res">${af}</span>.`;
+  }
+  if (act.name === 'Tanh') {
+    const ep = Math.exp(z), em = Math.exp(-z);
+    return `Função de ativação: <span class="eq">tanh(z) = (e<sup>z</sup>-e<sup>-z</sup>)/(e<sup>z</sup>+e<sup>-z</sup>)</span>.<br>` +
+           `Substituindo: <span class="eq">tanh(${zf})</span>, com <span class="eq">e<sup>${zf}</sup> ≈ ${fmt(ep,8)}</span> e <span class="eq">e<sup>-${zf}</sup> ≈ ${fmt(em,8)}</span>.<br>` +
+           `Resultado: <span class="res">${af}</span>.`;
+  }
+  if (act.name === 'ReLU') {
+    return `Função de ativação: <span class="eq">ReLU(z) = max(0,z)</span>.<br>` +
+           `Substituindo: <span class="eq">ReLU(${zf}) = max(0, ${zf})</span> = <span class="res">${af}</span>.`;
+  }
+  if (act.name === 'Leaky ReLU') {
+    return `Função de ativação: <span class="eq">LReLU(z) = z, se z>0; 0,01z, se z≤0</span>.<br>` +
+           `Como <span class="eq">z = ${zf}</span>${z>0 ? ' > 0' : ' ≤ 0'}, então <span class="res">${af}</span>.`;
+  }
+  return `Função de ativação: <span class="eq">f(z)=z</span>.<br>` +
+         `Substituindo: <span class="eq">f(${zf}) = ${zf}</span> = <span class="res">${af}</span>.`;
+}
+
+function activationDerivativeExplain(act, z, a){
+  const zf = fmt(z,8), af = fmt(a,8);
+  if (act.name === 'Sigmoid') {
+    const d = a*(1-a);
+    return `Derivada da ativação: <span class="eq">σ'(z) = σ(z)(1-σ(z))</span>.<br>` +
+           `Como <span class="eq">σ(z) = ${af}</span>, temos <span class="eq">σ'(${zf}) = ${af}(1-${af})</span> = <span class="res">${fmt(d,8)}</span>.`;
+  }
+  if (act.name === 'Tanh') {
+    const d = 1-a*a
+    return `Derivada da ativação: <span class="eq">tanh'(z) = 1 - tanh²(z)</span>.<br>` +
+           `Como <span class="eq">tanh(z) = ${af}</span>, temos <span class="eq">1 - (${af})²</span> = <span class="res">${fmt(d,8)}</span>.`;
+  }
+  if (act.name === 'ReLU') {
+    const d = z > 0 ? 1 : 0
+    return `Derivada da ativação: <span class="eq">ReLU'(z)=1</span> se <span class="eq">z>0</span>, e <span class="eq">0</span> caso contrário.<br>` +
+           `Como <span class="eq">z=${zf}</span>${z>0?' > 0':' ≤ 0'}, então <span class="res">${fmt(d,8)}</span>.`;
+  }
+  if (act.name === 'Leaky ReLU') {
+    const d = z > 0 ? 1 : 0.01
+    return `Derivada da ativação: <span class="eq">LReLU'(z)=1</span> se <span class="eq">z>0</span>, e <span class="eq">0,01</span> caso contrário.<br>` +
+           `Como <span class="eq">z=${zf}</span>${z>0?' > 0':' ≤ 0'}, então <span class="res">${fmt(d,8)}</span>.`;
+  }
+  return `Derivada da ativação linear: <span class="eq">f'(z)=1</span>.<br>` +
+         `Logo, <span class="res">1,00000000</span>.`;
+}
+
+
+function lossExplain(lossFn, yhat, y, loss){
+  const yh = fmt(yhat,8), yy = fmt(y,8), ll = fmt(loss,8);
+  const diff = yhat - y;
+
+  if (lossFn.name === 'MSE') {
+    const dLdyhat = diff;
+    return `Loss escolhida: <span class="eq">L = 1/2(ŷ-y)^2</span>.<br>` +
+           `Primeiro calculamos a diferença entre a predição e o alvo:<br>` +
+           `<span class="eq">ŷ-y = ${yh} - ${yy} = ${fmt(diff,8)}</span>.<br>` +
+           `Depois elevamos ao quadrado:<br>` +
+           `<span class="eq">(${fmt(diff,8)})² = ${fmt(diff*diff,8)}</span>.<br>` +
+           `Tomamos a metade desse valor:<br>` +
+           `<span class="eq">L = 1/2·${fmt(diff*diff,8)}</span> = <span class="res amber">${ll}</span>.<br><br>` +
+
+           `<strong>Agora, a derivada da loss em relação à predição:</strong><br>` +
+           `Queremos saber: <span class="eq">se ŷ mudar um pouquinho, quanto L muda?</span><br>` +
+           `Começamos de <span class="eq">L = 1/2(ŷ-y)^2</span>.<br>` +
+           `Derivando em relação a <span class="eq">ŷ</span>:<br>` +
+           `<span class="eq">∂L/∂ŷ = 1/2 · 2(ŷ-y) · ∂(ŷ-y)/∂ŷ</span>.<br>` +
+           `Como <span class="eq">y</span> é constante, <span class="eq">∂(ŷ-y)/∂ŷ = 1</span>.<br>` +
+           `Então sobra:<br>` +
+           `<span class="eq">∂L/∂ŷ = ŷ-y</span> = <span class="eq">${yh} - ${yy}</span> = <span class="res red">${fmt(dLdyhat,8)}</span>.<br>` +
+           `<div class="didactic-note"><strong>Legenda didática.</strong> Esse valor diz a direção do erro na saída da rede. ` +
+           `Se for negativo, a predição está abaixo do alvo e a rede precisa aumentar a saída. ` +
+           `Se for positivo, a predição está acima do alvo e a rede precisa diminuir a saída. ` +
+           `Em outras palavras, essa derivada funciona como um sinal que orienta o início da correção no backpropagation.</div>`;
+  }
+
+  if (lossFn.name === 'MAE') {
+    const sign = diff > 0 ? 1 : -1;
+    return `Loss escolhida: <span class="eq">L = |ŷ-y|</span>.<br>` +
+           `Diferença: <span class="eq">${yh} - ${yy} = ${fmt(diff,8)}</span>.<br>` +
+           `Valor absoluto: <span class="res amber">${ll}</span>.<br><br>` +
+           `<strong>Derivada da loss em relação à predição:</strong><br>` +
+           `Para MAE, a derivada é o sinal da diferença:<br>` +
+           `<span class="eq">∂L/∂ŷ = sinal(ŷ-y)</span> = <span class="res red">${fmt(sign,8)}</span>.<br>` +
+           `<div class="didactic-note"><strong>Legenda didática.</strong> Aqui não medimos o tamanho ao quadrado do erro, mas apenas seu módulo. ` +
+           `A derivada informa apenas a direção da correção: aumentar ou diminuir a saída.</div>`;
+  }
+
+  return `Aplicando a loss <strong>${lossFn.name}</strong> com <span class="eq">ŷ=${yh}</span> e <span class="eq">y=${yy}</span>.<br>` +
+         `Resultado: <span class="res amber">${ll}</span>.<br>` +
+         `<div class="didactic-note"><strong>Legenda didática.</strong> A derivada da loss em relação à predição mede o efeito de pequenas mudanças em ŷ sobre o erro total. ` +
+         `Ela é o primeiro passo para decidir como os pesos devem ser ajustados.</div>`;
+}
+
+
+
+function prepareMicroSession(){
+  if(!NET.arch || !NET.arch.length) return null;
+  const inputs = getInputs();
+  const y = getY();
+  const lr = getLR();
+  const fwd = forward(inputs);
+  const bp = backprop(fwd, y);
+  const outL = NET.W.length - 1;
+  const steps = [];
+  const lossFn = getLossFn();
+
+  // Forward microsteps, now much more explicit
+  for(let l=0;l<NET.W.length;l++){
+    const actFn = (l===NET.W.length-1 ? getOutputAct() : getHiddenAct());
+    for(let j=0;j<NET.W[l].length;j++){
+      let partial = 0;
+      const pieces = [];
+      for(let k=0;k<NET.W[l][j].length;k++){
+        const aPrev = fwd.acts[l][k];
+        const w = NET.W[l][j][k];
+        const contrib = w * aPrev;
+        const partialBefore = partial;
+        partial += contrib;
+        pieces.push(`${fmt(w,6)}×${fmt(aPrev,6)}`);
+        const fromLabel = l===0 ? `x${k+1}` : `h${l},${k+1}`;
+        const toLabel = (l===NET.W.length-1) ? `ŷ` : `h${l+1},${j+1}`;
+        steps.push({
+          stage:'forward', kind:'edge', l,j,k,
+          color:'#d97706',
+          text:
+            `Contribuição individual para o neurônio <strong>${toLabel}</strong> a partir de <strong>${fromLabel}</strong>.<br>` +
+            `Peso desta conexão: <span class="eq">w = ${fmt(w,8)}</span>.<br>` +
+            `Saída do nó anterior: <span class="eq">a = ${fmt(aPrev,8)}</span>.<br>` +
+            `Multiplicação local: <span class="eq">w·a = ${fmt(w,8)} × ${fmt(aPrev,8)}</span> = <span class="res">${fmt(contrib,8)}</span>.<br>` +
+            `Acumulador antes desta conexão: <span class="eq">${fmt(partialBefore,8)}</span>.<br>` +
+            `Acumulador depois desta conexão: <span class="eq">${fmt(partialBefore,8)} + ${fmt(contrib,8)}</span> = <span class="res">${fmt(partial,8)}</span>.`
+        });
+      }
+      const zNoBias = NET.W[l][j].reduce((acc,w,k)=>acc+w*fwd.acts[l][k],0);
+      const b = NET.b[l][j];
+      const z = fwd.zs[l][j];
+      const a = fwd.acts[l+1][j];
+      const label = l===NET.W.length-1 ? 'ŷ' : `h${l+1},${j+1}`;
+      steps.push({
+        stage:'forward', kind:'node', l:l+1, j,
+        color:'#2563eb',
+        text:
+          `Fechamento do neurônio <strong>${label}</strong>.<br>` +
+          `Soma das contribuições: <span class="eq">Σ(w·a) = ${pieces.join(' + ')}</span> = <span class="res">${fmt(zNoBias,8)}</span>.<br>` +
+          `Viés do neurônio: <span class="eq">b = ${fmt(b,8)}</span>.<br>` +
+          `Pré-ativação completa: <span class="eq">z = Σ(w·a) + b = ${fmt(zNoBias,8)} + ${fmt(b,8)}</span> = <span class="res">${fmt(z,8)}</span>.<br>` +
+          activationExplain(actFn, z, a)
+      });
+    }
+  }
+
+  const loss = lossFn.f(fwd.yhat, y);
+  steps.push({
+    stage:'loss', kind:'node', l:NET.arch.length-1, j:0, color:'#d97706',
+    text: lossExplain(lossFn, fwd.yhat, y, loss)
+  });
+
+  const dOut = lossFn.dOut(fwd.yhat, y);
+  const outAct = getOutputAct();
+  const outA = fwd.acts[fwd.acts.length-1][0];
+  const outZ = fwd.zs[fwd.zs.length-1][0];
+  const outActPrime = outAct.dfIsOfA ? outAct.df(outA) : outAct.df(outA, outZ);
+
+  steps.push({
+    stage:'backprop', kind:'node', l:outL+1, j:0, color:'#dc2626',
+    text:
+      `Backpropagation começa pela saída.<br>` +
+      `Primeiro usamos a derivada da loss em relação à predição, já explicada no passo anterior: <span class="eq">∂L/∂ŷ = ${fmt(dOut,8)}</span>.<br>` +
+      activationDerivativeExplain(outAct, outZ, outA) + `<br>` +
+      `Agora aplicamos a regra da cadeia completa:<br>` +
+      `<span class="eq">δ_saida = ∂L/∂z = (∂L/∂ŷ)·(∂ŷ/∂z)</span>.<br>` +
+      `Substituindo: <span class="eq">${fmt(dOut,8)} × ${fmt(outActPrime,8)}</span> = <span class="res red">${fmt(bp.deltas[outL][0],8)}</span>.`
+  });
+
+  for(let l=NET.W.length-2;l>=0;l--){
+    for(let j=0;j<NET.W[l].length;j++){
+      const nextTerms = [];
+      let weightedSum = 0;
+      for(let k=0;k<NET.W[l+1].length;k++){
+        const wNext = NET.W[l+1][k][j];
+        const deltaNext = bp.deltas[l+1][k];
+        const term = wNext * deltaNext;
+        weightedSum += term;
+        nextTerms.push(`${fmt(wNext,8)}×${fmt(deltaNext,8)}=${fmt(term,8)}`);
+      }
+      const aHere = fwd.acts[l+1][j];
+      const zHere = fwd.zs[l][j];
+      const hiddenAct = getHiddenAct();
+      const actPrime = hiddenAct.dfIsOfA ? hiddenAct.df(aHere) : hiddenAct.df(aHere, zHere);
+
+      steps.push({
+        stage:'backprop', kind:'node', l:l+1, j, color:'#dc2626',
+        text:
+          `Backprop no neurônio <strong>h${l+1},${j+1}</strong>.<br>` +
+          `O erro chega da camada seguinte por meio da soma ponderada:<br>` +
+          `<span class="eq">Σ(w·δ_próx) = ${nextTerms.join(' + ')}</span> = <span class="res red">${fmt(weightedSum,8)}</span>.<br>` +
+          activationDerivativeExplain(hiddenAct, zHere, aHere) + `<br>` +
+          `Aplicando a regra da cadeia no neurônio oculto:<br>` +
+          `<span class="eq">δ = ∂L/∂z = (∂L/∂a)·(∂a/∂z) = Σ(w·δ_próx)·f'(z)</span>.<br>` +
+          `Substituindo: <span class="eq">${fmt(weightedSum,8)} × ${fmt(actPrime,8)}</span> = <span class="res red">${fmt(bp.deltas[l][j],8)}</span>.`
+      });
+    }
+  }
+
+  for(let l=0;l<NET.W.length;l++){
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++){
+        const old = NET.W[l][j][k];
+        const aPrev = fwd.acts[l][k];
+        const delta = bp.deltas[l][j];
+        const grad = bp.dW[l][j][k];
+        const newv = old - lr*grad;
+        const fromLabel = l===0 ? `x${k+1}` : `h${l},${k+1}`;
+        const toLabel = (l===NET.W.length-1) ? `ŷ` : `h${l+1},${j+1}`;
+
+        steps.push({
+          stage:'update', kind:'edge', l,j,k, color:'#059669',
+          text:
+            `Gradiente do peso da conexão <strong>${fromLabel} → ${toLabel}</strong>.<br>` +
+            `Usamos a derivada local do peso:<br>` +
+            `<span class="eq">∂L/∂w = (∂L/∂z)·(∂z/∂w) = δ·a_anterior</span>.<br>` +
+            `Aqui, <span class="eq">δ = ${fmt(delta,8)}</span> e <span class="eq">a_anterior = ${fmt(aPrev,8)}</span>.<br>` +
+            `Logo, <span class="eq">∂L/∂w = ${fmt(delta,8)} × ${fmt(aPrev,8)}</span> = <span class="res green">${fmt(grad,8)}</span>.<br>` +
+            `Atualização por gradiente descendente:<br>` +
+            `<span class="eq">w_novo = w_antigo − η·(∂L/∂w)</span>.<br>` +
+            `Substituindo: <span class="eq">${fmt(old,8)} − ${fmt(lr,8)} × ${fmt(grad,8)}</span> = <span class="res green">${fmt(newv,8)}</span>.`
+        });
+      }
+      const oldB = NET.b[l][j];
+      const gradB = bp.db[l][j];
+      const newB = oldB - lr*gradB;
+      const label = l===NET.W.length-1 ? 'saída ŷ' : `h${l+1},${j+1}`;
+      steps.push({
+        stage:'update', kind:'node', l:l+1, j, color:'#059669',
+        text:
+          `Gradiente do viés do neurônio <strong>${label}</strong>.<br>` +
+          `Como <span class="eq">z = Σ(w·a)+b</span>, temos <span class="eq">∂z/∂b = 1</span>.<br>` +
+          `Portanto, <span class="eq">∂L/∂b = (∂L/∂z)·(∂z/∂b) = δ·1 = δ</span>.<br>` +
+          `Substituindo: <span class="eq">∂L/∂b = ${fmt(gradB,8)}</span>.<br>` +
+          `Atualização do viés: <span class="eq">b_novo = b_antigo − η·(∂L/∂b)</span>.<br>` +
+          `Substituindo: <span class="eq">${fmt(oldB,8)} − ${fmt(lr,8)} × ${fmt(gradB,8)}</span> = <span class="res green">${fmt(newB,8)}</span>.`
+      });
+    }
+  }
+
+  return {inputs,y,lr,fwd,bp,loss,steps};
+}
+
+
+
+function finalizeMicroSession(){
+  if(!MICRO.session) return;
+  const {fwd,bp,y,lr,loss} = MICRO.session;
+  applyGradients(bp, lr);
+  epoch++;
+  document.getElementById('m-epoch').textContent = epoch;
+  setMetrics(fwd.yhat, loss, fwd.yhat-y);
+  const currentGrad = gradNorm(bp);
+  lossHistory.push(loss);
+  bestLoss = Math.min(bestLoss, loss);
+  pushEpochHistory({epoch,samples:1,pred:fwd.yhat,target:y,loss,err:bp.err,grad:currentGrad,lr,comment:learningComment(bp.err,loss)});
+  updateTrainingProgress(epoch, getEpochs());
+  updateWeightTable();
+  updateWeightLabels();
+  applyWeightStyles();
+  updateNodeValues(fwd);
+  drawLossChart();
+  drawErrorChart();
+  clearCalcOverlay();
+  highlightNet('upd');
+
+  MICRO.log += `<div class="fc-section"><span class="fc-head upd">Microetapas concluídas</span>`+
+               microStepLine(`Todos os pesos e vieses desta época foram atualizados.`)+
+               microStepLine(`Clique novamente em <strong>Avançar cálculo</strong> para começar outra época detalhada.`)+
+               `</div>`;
+  document.getElementById('fullcalc').innerHTML = MICRO.log;
+  const expl = document.getElementById('step-explainer');
+  if(expl){
+    expl.innerHTML = `<strong>Etapa concluída:</strong> a época foi completada conexão por conexão. `+
+                     `A predição foi <strong>${fmt(fwd.yhat,5)}</strong>, o alvo era <strong>${fmt(y,5)}</strong> e o loss foi <strong>${fmt(loss,6)}</strong>. Os gradientes foram aplicados peso a peso e viés a viés.`;
+  }
+  MICRO.active = false;
+}
+
+function advanceCalculationDetailed(){
+  stopRun?.();
+  if(!MICRO.active){
+    const session = prepareMicroSession();
+    if(!session) return;
+    MICRO.active = true;
+    MICRO.index = 0;
+    MICRO.steps = session.steps;
+    MICRO.session = session;
+    MICRO.log = `<div class="fc-section"><span class="fc-head fwd">Avanço detalhado do cálculo</span>`+
+                microStepLine(`Entradas: [${session.inputs.map(v=>fmt(v,2)).join(', ')}]`)+
+                microStepLine(`Alvo y = ${fmt(session.y,4)} | taxa η = ${fmt(session.lr,3)}`)+
+                `</div>`;
+    document.getElementById('fullcalc').innerHTML = MICRO.log;
+    const expl = document.getElementById('step-explainer');
+    if(expl){
+      expl.innerHTML = `Use <strong>Avançar cálculo</strong> repetidamente. A cada clique, uma conexão ou um neurônio da rede será processado e indicado por uma seta.`;
+    }
+  }
+
+  if(MICRO.index >= MICRO.steps.length){
+    finalizeMicroSession();
+    resetMicroState();
+    return;
+  }
+
+  const st = MICRO.steps[MICRO.index];
+  setPhaseByName(st.stage);
+
+  if(st.kind === 'edge'){
+    highlightSpecificEdge(st.l, st.j, st.k, st.color);
+  } else if(st.kind === 'node'){
+    highlightSpecificNode(st.l, st.j, st.color);
+  }
+
+  const headClass = st.stage === 'forward' ? 'fwd' : (st.stage === 'loss' ? 'loss' : (st.stage === 'backprop' ? 'back' : 'upd'));
+  const stageLabel = st.stage === 'forward' ? 'Forward' : (st.stage === 'loss' ? 'Loss' : (st.stage === 'backprop' ? 'Backprop' : 'Update'));
+  MICRO.log += `<div class="fc-section"><span class="fc-head ${headClass}">${stageLabel} · passo ${MICRO.index+1}/${MICRO.steps.length}</span>${microStepLine(st.text)}</div>`;
+  document.getElementById('fullcalc').innerHTML = MICRO.log;
+  document.getElementById('fullcalc').scrollTop = 999999;
+
+  const expl = document.getElementById('step-explainer');
+  if(expl){
+    expl.innerHTML = `<strong>Microetapa atual:</strong> ${st.text}`;
+  }
+
+  MICRO.index += 1;
+
+  if(MICRO.index >= MICRO.steps.length){
+    MICRO.log += `<div class="fc-section"><span class="fc-head upd">Pronto para aplicar a época</span>`+
+                 microStepLine(`Mais um clique em <strong>Avançar cálculo</strong> aplicará a atualização final e registrará a época no histórico.`)+
+                 `</div>`;
+    document.getElementById('fullcalc').innerHTML = MICRO.log;
+  }
+}
+
+if (typeof resetNet === 'function') {
+  const _oldResetNetMicro = resetNet;
+  resetNet = function(...args){
+    resetMicroState();
+    return _oldResetNetMicro.apply(this, args);
+  }
+}
+if (typeof buildNet === 'function') {
+  const _oldBuildNetMicro = buildNet;
+  buildNet = function(...args){
+    resetMicroState();
+    const r = _oldBuildNetMicro.apply(this, args);
+    const expl = document.getElementById('step-explainer');
+    if(expl){
+      expl.innerHTML = 'Use <strong>Avançar cálculo</strong> para acompanhar a matemática conexão por conexão, com substituição numérica nas ativações, derivadas e gradientes. Use <strong>Passo único</strong> para o passo a passo por fase.';
+    }
+    return r;
+  }
+}
+
+
+function clampParam(v, min=-2, max=2){
+  v = Number(v);
+  if (Number.isNaN(v)) v = 0;
+  return Math.max(min, Math.min(max, v));
+}
+
+function updateParameterDisplays(){
+  const editor = document.getElementById('param-editor');
+  if (!editor || !NET.W) return;
+  for(let l=0;l<NET.W.length;l++){
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++){
+        const slider = document.getElementById(`pw-${l}-${j}-${k}`);
+        const out = document.getElementById(`pwv-${l}-${j}-${k}`);
+        if(slider && out){
+          slider.value = NET.W[l][j][k];
+          out.textContent = fmt(NET.W[l][j][k],4);
+        }
+      }
+      const bslider = document.getElementById(`pb-${l}-${j}`);
+      const bout = document.getElementById(`pbv-${l}-${j}`);
+      if(bslider && bout){
+        bslider.value = NET.b[l][j];
+        bout.textContent = fmt(NET.b[l][j],4);
+      }
+    }
+  }
+}
+
+function onWeightSliderChange(l,j,k,val){
+  if(!NET.W) return;
+  NET.W[l][j][k] = clampParam(val);
+  const slider = document.getElementById(`pw-${l}-${j}-${k}`); if(slider) slider.title = fmt(NET.W[l][j][k],4);
+  updateWeightLabels();
+  applyWeightStyles();
+  updateWeightTable();
+  updateParameterDisplays();
+}
+
+function onBiasSliderChange(l,j,val){
+  if(!NET.b) return;
+  NET.b[l][j] = clampParam(val);
+  const slider = document.getElementById(`pb-${l}-${j}`); if(slider) slider.title = fmt(NET.b[l][j],4);
+  updateWeightLabels();
+  applyWeightStyles();
+  updateWeightTable();
+  updateParameterDisplays();
+}
+
+
+
+function buildParameterEditor(){
+  const editor = document.getElementById('param-editor');
+  if (!editor || !NET.W) return;
+  let s = '';
+  for(let l=0;l<NET.W.length;l++){
+    const layerLabel = l === NET.W.length - 1 ? `Camada de saída` : `Camada ${l+1}`;
+    s += `<div class="param-group"><div class="param-title">${layerLabel}</div>`;
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++){
+        const fromLabel = l===0 ? `x${k+1}` : `h${l},${k+1}`;
+        const toLabel = l===NET.W.length-1 ? `ŷ` : `h${l+1},${j+1}`;
+        const wName = `w${l+1},${j+1},${k+1}`;
+        s += `<div class="param-row">
+          <div class="param-top">
+            <div class="name">${wName}</div>
+            <div class="value" id="pwv-${l}-${j}-${k}">${fmt(NET.W[l][j][k],4)}</div>
+          </div>
+          <input class="param-slider" type="range" id="pw-${l}-${j}-${k}" min="-2" max="2" step="0.01" value="${NET.W[l][j][k]}"
+            oninput="onWeightSliderChange(${l},${j},${k}, this.value)">
+          <div class="param-subnote">${fromLabel} → ${toLabel}</div>
+        </div>`;
+      }
+      const bName = `b${l+1},${j+1}`;
+      const targetLabel = l===NET.W.length-1 ? `saída ŷ` : `neurônio h${l+1},${j+1}`;
+      s += `<div class="param-row">
+        <div class="param-top">
+          <div class="name">${bName}</div>
+          <div class="value" id="pbv-${l}-${j}">${fmt(NET.b[l][j],4)}</div>
+        </div>
+        <input class="param-slider" type="range" id="pb-${l}-${j}" min="-2" max="2" step="0.01" value="${NET.b[l][j]}"
+          oninput="onBiasSliderChange(${l},${j}, this.value)">
+        <div class="param-subnote">viés do ${targetLabel}</div>
+      </div>`;
+    }
+    s += `</div>`;
+  }
+  editor.innerHTML = s;
+}
+
+
+
+function randomizeParameters(){
+  if(!NET.W) return;
+  for(let l=0;l<NET.W.length;l++){
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++){
+        NET.W[l][j][k] = +(Math.random()*1.2 - 0.6).toFixed(4);
+      }
+      NET.b[l][j] = +(Math.random()*0.4 - 0.2).toFixed(4);
+    }
+  }
+  drawNetwork();
+  applyWeightStyles();
+  updateWeightLabels();
+  updateWeightTable();
+  buildParameterEditor();
+}
+
+function zeroParameters(){
+  if(!NET.W) return;
+  for(let l=0;l<NET.W.length;l++){
+    for(let j=0;j<NET.W[l].length;j++){
+      for(let k=0;k<NET.W[l][j].length;k++){
+        NET.W[l][j][k] = 0;
+      }
+      NET.b[l][j] = 0;
+    }
+  }
+  drawNetwork();
+  applyWeightStyles();
+  updateWeightLabels();
+  updateWeightTable();
+  buildParameterEditor();
+}
+
+// patch buildNet/reset to rebuild parameter editor
+if (typeof buildNet === 'function') {
+  const _origBuildNetParams = buildNet;
+  buildNet = function(...args){
+    const r = _origBuildNetParams.apply(this, args);
+    setTimeout(() => {
+      try { buildParameterEditor(); } catch(e) {}
+      try { updateParameterDisplays(); } catch(e) {}
+    }, 20);
+    return r;
+  }
+}
+if (typeof resetNet === 'function') {
+  const _origResetNetParams = resetNet;
+  resetNet = function(...args){
+    const r = _origResetNetParams.apply(this, args);
+    setTimeout(() => {
+      try { buildParameterEditor(); } catch(e) {}
+      try { updateParameterDisplays(); } catch(e) {}
+    }, 20);
+    return r;
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    try { buildParameterEditor(); } catch(e) {}
+    try { updateParameterDisplays(); } catch(e) {}
+    try { drawErrorChart(); } catch(e) {}
+  }, 50);
+});
+
+
+window.addEventListener('resize', () => {
+  try{ drawLossChart(); }catch(e){}
+  try{ drawErrorChart(); }catch(e){}
+});
+
+function getCurrentTrainingSnapshot(){
+  const pred = document.getElementById('m-pred')?.textContent || '—';
+  const target = document.getElementById('m-target')?.textContent || '—';
+  const loss = document.getElementById('m-loss')?.textContent || '—';
+  const grad = document.getElementById('m-grad')?.textContent || '—';
+  const dloss = document.getElementById('m-dloss')?.textContent || '—';
+  const lr = (typeof getLR === 'function') ? getLR() : null;
+  const epochText = document.getElementById('m-epoch')?.textContent || '0';
+  const epochNum = Number(String(epochText).replace(/[^\d.-]/g,'')) || 0;
+  return {pred, target, loss, grad, dloss, lr, epochNum};
+}
+
+function askTrainingQuestion(prefill){
+  const input = document.getElementById('qa-input');
+  if(prefill && input) input.value = prefill;
+  answerTrainingQuestion();
+}
+
+function answerTrainingQuestion(){
+  const input = document.getElementById('qa-input');
+  const out = document.getElementById('qa-answer');
+  if(!input || !out) return;
+  const q = (input.value || '').trim().toLowerCase();
+  const s = getCurrentTrainingSnapshot();
+
+  if(!q){
+    out.innerHTML = 'Escreva uma pergunta curta, por exemplo: <strong>por que o erro aumentou?</strong>';
+    return;
+  }
+
+  const predNum = parseFloat(String(s.pred).replace(',', '.'));
+  const targNum = parseFloat(String(s.target).replace(',', '.'));
+  const lossNum = parseFloat(String(s.loss).replace(',', '.'));
+  const lrNum = Number(s.lr);
+  const gradNum = parseFloat(String(s.grad).match(/-?\d+(\.\d+)?/)?.[0] || '0');
+  const dlossNum = parseFloat(String(s.dloss).replace(',', '.'));
+
+  function p(txt){ return `<div>${txt}</div>`; }
+
+  let ans = '';
+
+  if(q.includes('época') || q.includes('epoca')){
+    ans += p('<strong>Época</strong> é uma passagem completa pelos dados de treino. Se você treinou 10 épocas, a rede fez 10 tentativas completas de ajustar pesos e vieses.');
+    ans += p(`No estado atual, o simulador está na época <strong>${s.epochNum}</strong>.`);
+  } else if(q.includes('taxa de aprendizado') || q.includes('eta') || q.includes('aprendizado')){
+    ans += p(`<strong>Taxa de aprendizado</strong> é o tamanho do passo usado para atualizar os parâmetros. Aqui, η = <strong>${isFinite(lrNum) ? lrNum.toFixed(4) : '—'}</strong>.`);
+    if(isFinite(lrNum)){
+      if(lrNum < 0.08) ans += p('Esse valor está baixo. A rede tende a aprender devagar, mas com mais estabilidade.');
+      else if(lrNum < 0.35) ans += p('Esse valor está em uma faixa moderada. Costuma ser uma região didática boa para observar convergência sem muita oscilação.');
+      else if(lrNum < 0.65) ans += p('Esse valor já é alto. A rede pode corrigir rápido, mas também pode oscilar.');
+      else ans += p('Esse valor está muito alto. A rede pode “pular” o mínimo do erro e ficar instável.');
+    }
+  } else if(q.includes('gradiente')){
+    ans += p('<strong>Gradiente</strong> mede como o erro muda quando cada parâmetro muda. Ele aponta a direção de maior aumento do erro. O gradiente descendente anda na direção oposta.');
+    ans += p(`No simulador, a norma atual do gradiente é <strong>${s.grad}</strong>. Isso resume o tamanho global da correção que a rede está tentando fazer.`);
+  } else if(q.includes('erro aumentou') || q.includes('loss aumentou') || q.includes('por que o erro')){
+    ans += p(`A pergunta certa é: <strong>o loss está caindo ou subindo entre uma época e outra?</strong> Aqui, Δ loss = <strong>${s.dloss}</strong>.`);
+    if(isFinite(dlossNum)){
+      if(dlossNum > 0) {
+        ans += p('Como o Δ loss está positivo, o erro aumentou em relação à época anterior.');
+        ans += p('Isso pode acontecer por taxa de aprendizado alta, pesos iniciais ruins, região instável da função erro ou porque a rede ainda está oscilando antes de convergir.');
+      } else if(dlossNum < 0) {
+        ans += p('Na verdade, neste momento o loss diminuiu. Então a rede está caminhando na direção correta.');
+      } else {
+        ans += p('O Δ loss está praticamente nulo. Isso sugere estagnação ou uma fase muito lenta de melhoria.');
+      }
+    } else {
+      ans += p('Ainda não há informação suficiente para comparar com a época anterior.');
+    }
+  } else if(q.includes('saída longe do alvo') || q.includes('saida longe do alvo') || q.includes('longe do alvo') || q.includes('predição') || q.includes('predicao')){
+    ans += p(`A rede está produzindo <strong>ŷ = ${s.pred}</strong> e o alvo atual é <strong>y = ${s.target}</strong>.`);
+    if(isFinite(predNum) && isFinite(targNum)){
+      const diff = predNum - targNum;
+      ans += p(`A diferença atual é <strong>ŷ - y = ${diff.toFixed(6)}</strong>.`);
+      if(diff < 0) ans += p('Como esse valor é negativo, a predição está abaixo do alvo. A rede precisa aumentar a saída.');
+      else if(diff > 0) ans += p('Como esse valor é positivo, a predição está acima do alvo. A rede precisa diminuir a saída.');
+      else ans += p('A predição coincide com o alvo neste instante.');
+    }
+  } else if(q.includes('backprop') || q.includes('retropropag')){
+    ans += p('<strong>Backpropagation</strong> é o processo de levar o erro da saída de volta pelas camadas anteriores usando a regra da cadeia.');
+    ans += p('A ideia é descobrir quanto cada peso e cada viés contribuíram para o erro, para então corrigi-los.');
+  } else if(q.includes('viés') || q.includes('vies') || q.includes('bias') || q == 'b'){
+    ans += p('<strong>Viés b</strong> desloca a resposta do neurônio. Mesmo quando a entrada é zero, o neurônio ainda pode ter uma pré-ativação diferente de zero por causa do viés.');
+    ans += p('Didaticamente, ele funciona como um termo de ajuste fino da posição da função aprendida.');
+  } else if(q.includes('peso') || q == 'w'){
+    ans += p('<strong>Peso w</strong> controla a influência de uma entrada ou de um neurônio anterior sobre o próximo neurônio.');
+    ans += p('Peso positivo tende a reforçar a ativação. Peso negativo tende a atuar no sentido oposto.');
+  } else {
+    ans += p('Não achei uma resposta pronta para essa pergunta dentro do simulador.');
+    ans += p('Tente formular de forma mais direta, por exemplo: <strong>o que é época?</strong>, <strong>por que o erro aumentou?</strong> ou <strong>o que faz a taxa de aprendizado?</strong>');
+  }
+
+  out.innerHTML = ans;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const qa = document.getElementById('qa-input');
+  if(qa){
+    qa.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        answerTrainingQuestion();
+      }
+    });
+    qa.addEventListener('blur', () => {
+      if(qa.value.trim()) answerTrainingQuestion();
+    });
+  }
+});
+
+</script>
+</body>
+</html>
+
+document.getElementById('n-epochs').addEventListener('input', ()=>updateTrainingProgress(epoch, getEpochs()));
