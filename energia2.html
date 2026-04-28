@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAIA - Sincronização Perfeita de Envelope</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --vid-red: #d93025;
+            --bg-light: #f8f9fa;
+        }
+
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--bg-light); color: #333; }
+
+        .header-blue {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .slider-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        input[type=range] { width: 100%; max-width: 250px; cursor: pointer; accent-color: var(--primary-blue); }
+        label { margin-bottom: 5px; font-weight: bold; }
+
+        .formula-box {
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            font-size: 1.8rem;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        canvas { width: 100% !important; height: 380px !important; }
+        h3 { margin-top: 0; color: var(--primary-blue); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<header class="header-blue">
+    <h1>Laboratório MAIA</h1>
+    <p>Envelope Exponencial e Energia</p>
+    <p>Prof. Adeil Araújo</p>
+</header>
+
+<div class="main-container">
+    
+    <div class="card full-width">
+        <div class="controls">
+            <div class="slider-group">
+                <label>Altura Inicial (h₀): <span id="valH">1.75</span> m</label>
+                <input type="range" id="sliderH" min="0.5" max="2.0" step="0.01" value="1.75">
+            </div>
+            <div class="slider-group">
+                <label>Coef. Restituição (e): <span id="valE">0.84</span></label>
+                <input type="range" id="sliderE" min="0.30" max="0.95" step="0.01" value="0.84">
+            </div>
+        </div>
+        <div class="formula-box" id="formula">h<sub>n</sub> = 1.75 · (0.84)<sup>2n</sup></div>
+    </div>
+
+    <div class="card">
+        <h3>Cinemática: Posição vs Tempo</h3>
+        <canvas id="posChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h3>Dinâmica: Energia vs Tempo</h3>
+        <canvas id="energyChart"></canvas>
+    </div>
+
+</div>
+
+<script>
+    const posCtx = document.getElementById('posChart').getContext('2d');
+    const eneCtx = document.getElementById('energyChart').getContext('2d');
+    
+    let posChart, eneChart;
+    const g = 9.81;
+    const m = 0.058;
+
+    function calculatePhysics() {
+        const h0 = parseFloat(document.getElementById('sliderH').value);
+        const e = parseFloat(document.getElementById('sliderE').value);
+
+        document.getElementById('valH').innerText = h0.toFixed(2);
+        document.getElementById('valE').innerText = e.toFixed(2);
+        document.getElementById('formula').innerHTML = `h<sub>n</sub> = ${h0.toFixed(2)} · (${e.toFixed(2)})<sup>2n</sup>`;
+
+        const posData = [];
+        const envData = [];
+        const epData = [];
+        const ecData = [];
+        const etData = [];
+
+        let t = 0;
+        let dt = 0.005; // dt menor para maior precisão de pico
+        let y = h0;
+        let v = 0;
+
+        // 1. GERAÇÃO DOS DADOS DA TRAJETÓRIA E ENERGIA
+        for (let i = 0; i < 1500; i++) {
+            if (y <= 0 && v < 0) {
+                v = Math.abs(v) * e;
+                y = 0;
+            }
+
+            let a = -g;
+            v += a * dt;
+            y += v * dt;
+            t += dt;
+
+            if (t > 6) break;
+
+            posData.push({x: t, y: Math.max(0, y)});
+            
+            let Ep = m * g * Math.max(0, y);
+            let Ec = 0.5 * m * (v * v);
+            epData.push({x: t, y: Ep});
+            ecData.push({x: t, y: Ec});
+            etData.push({x: t, y: Ep + Ec});
+        }
+
+        // 2. SINCRONIZAÇÃO DO ENVELOPE (A mágica está aqui)
+        let t_acumulado = 0;
+        for (let n = 0; n < 10; n++) {
+            let hn = h0 * Math.pow(e, 2 * n);
+            
+            // O tempo do pico hn é o tempo do pico anterior + tempo de descida anterior + tempo de subida atual
+            // Para n=0, o pico ocorre em t=0
+            if (n > 0) {
+                // Tempo de voo total do ressalto anterior (subida + descida)
+                let h_anterior = h0 * Math.pow(e, 2 * (n-1));
+                let v_restituida = Math.sqrt(2 * g * h_anterior) * e;
+                let tempo_voo = (2 * v_restituida) / g;
+                
+                // Se for o primeiro ressalto após a queda inicial, o t_acumulado 
+                // precisa considerar apenas a metade do tempo de voo (a subida)
+                if (n === 1) {
+                    let t_queda_inicial = Math.sqrt(2 * h0 / g);
+                    t_acumulado = t_queda_inicial + (tempo_voo / 2);
+                } else {
+                    t_acumulado += tempo_voo;
+                }
+            } else {
+                t_acumulado = 0;
+            }
+
+            if (t_acumulado > 6) break;
+            envData.push({x: t_acumulado, y: hn});
+        }
+
+        return { posData, envData, epData, ecData, etData };
+    }
+
+    function update() {
+        const data = calculatePhysics();
+
+        if (posChart) {
+            posChart.data.datasets[0].data = data.posData;
+            posChart.data.datasets[1].data = data.envData;
+            posChart.update('none');
+
+            eneChart.data.datasets[0].data = data.epData;
+            eneChart.data.datasets[1].data = data.ecData;
+            eneChart.data.datasets[2].data = data.etData;
+            eneChart.update('none');
+        } else {
+            posChart = new Chart(posCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Posição (y)', data: data.posData, borderColor: '#1a73e8', showLine: true, pointRadius: 0, fill: false, order: 2 },
+                        { label: 'Envelope Exponencial', data: data.envData, borderColor: '#d93025', borderDash: [6, 4], showLine: true, pointRadius: 4, backgroundColor: '#d93025', fill: false, tension: 0.3, order: 1 }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { x: { type: 'linear', min: 0, max: 6 }, y: { min: 0, max: 2.2 } },
+                    plugins: { legend: { position: 'bottom' } } 
+                }
+            });
+
+            eneChart = new Chart(eneCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'E. Potencial', data: data.epData, borderColor: '#1a73e8', showLine: true, pointRadius: 0, fill: false },
+                        { label: 'E. Cinética', data: data.ecData, borderColor: '#34a853', showLine: true, pointRadius: 0, fill: false },
+                        { label: 'E. Total (Escada)', data: data.etData, borderColor: '#a142f4', borderWidth: 3, showLine: true, pointRadius: 0, fill: false }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { x: { type: 'linear', min: 0, max: 6 }, y: { min: 0, max: 1.2 } },
+                    plugins: { legend: { position: 'bottom' } } 
+                }
+            });
+        }
+    }
+
+    document.querySelectorAll('input').forEach(s => s.addEventListener('input', update));
+    update();
+</script>
+</body>
+</html>
