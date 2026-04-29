@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAIA - Modelagem e Dinâmica da Bola Saltitante</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --vid-red: #d93025;
+            --bg-light: #f8f9fa;
+            --success-green: #188038;
+        }
+
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-light); }
+
+        .header-blue {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 20px 40px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border-bottom: 5px solid #1557b0;
+        }
+
+        .header-blue h1 { margin: 0; font-size: 2rem; }
+        .header-blue p { margin: 5px 0 0; font-size: 1rem; opacity: 0.9; }
+
+        .main-container {
+            max-width: 1100px;
+            margin: 25px auto;
+            padding: 0 20px;
+            display: grid;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+            background: #f1f3f4;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .slider-group { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        input[type=range] { width: 100%; max-width: 300px; cursor: pointer; accent-color: var(--primary-blue); }
+        label { margin-bottom: 8px; font-weight: bold; color: #333; }
+
+        .formula-box {
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            font-size: 2.5rem;
+            color: #222;
+            margin-top: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .conclusion-box {
+            display: none;
+            background-color: #f1f8f4;
+            border-left: 6px solid var(--success-green);
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .conclusion-box h2 { color: var(--success-green); margin-top: 0; font-size: 1.5rem; border-bottom: 1px solid #d4e7d9; padding-bottom: 10px; }
+        .conclusion-box h3 { color: #202124; margin: 15px 0 5px 0; font-size: 1.1rem; }
+        .conclusion-box ul { margin: 0; padding-left: 20px; line-height: 1.6; color: #3c4043; list-style-type: square; }
+        .conclusion-box b { color: #202124; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        canvas { width: 100% !important; height: 480px !important; }
+    </style>
+</head>
+<body>
+
+<header class="header-blue">
+    <h1>Laboratório MAIA</h1>
+    <p>Investigação Científica: Modelagem e Dinâmica da Energia</p>
+</header>
+
+<div class="main-container">
+    <div class="card">
+        <div class="controls">
+            <div class="slider-group">
+                <label>Altura Inicial (h₀): <span id="valH">0.00</span> m</label>
+                <input type="range" id="sliderH" min="0.0" max="2.0" step="0.01" value="0.00">
+            </div>
+            <div class="slider-group" style="border-left: 2px solid #ccc; padding-left: 30px;">
+                <label>Coef. Restituição (e): <span id="valE">0.50</span></label>
+                <input type="range" id="sliderE" min="0.30" max="0.95" step="0.01" value="0.50">
+            </div>
+        </div>
+
+        <canvas id="bounceChart"></canvas>
+
+        <div class="formula-box" id="formula">
+            h<sub>n</sub> = 0.00 · (0.50)<sup>2n</sup>
+        </div>
+
+        <div id="conclusion" class="conclusion-box"></div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('bounceChart').getContext('2d');
+    let chart;
+
+    const g = 9.81;
+    const h0_ref = 1.33;
+    const e_ref = 0.77;
+
+    function generateExperimentalData() {
+        const points = [];
+        let h = h0_ref;
+        let t_off = 0;
+        for (let n = 0; n < 8; n++) {
+            let v = Math.sqrt(2 * g * h);
+            let t_f = (2 * v) / g;
+            if (n === 0) {
+                for (let t = 0; t <= t_f/2; t += 0.04) points.push({x: t, y: h - 0.5 * g * t * t});
+                t_off = t_f / 2;
+            } else {
+                for (let t = 0; t <= t_f; t += 0.04) points.push({x: t_off + t, y: v * t - 0.5 * g * t * t});
+                t_off += t_f;
+            }
+            h *= (e_ref * e_ref);
+        }
+        return points;
+    }
+    const expPoints = generateExperimentalData();
+
+    function update() {
+        const h0 = parseFloat(document.getElementById('sliderH').value);
+        const e = parseFloat(document.getElementById('sliderE').value);
+
+        document.getElementById('valH').innerText = h0.toFixed(2);
+        document.getElementById('valE').innerText = e.toFixed(2);
+        document.getElementById('formula').innerHTML = `h<sub>n</sub> = ${h0.toFixed(2)} · (${e.toFixed(2)})<sup>2n</sup>`;
+
+        const conclusionBox = document.getElementById('conclusion');
+        if (Math.abs(h0 - h0_ref) < 0.05 && Math.abs(e - e_ref) < 0.03) {
+            const ePercent = (e * 100).toFixed(0);
+            const q = Math.pow(e, 2).toFixed(2);
+            const qPercent = (q * 100).toFixed(0);
+
+            conclusionBox.innerHTML = `
+                <h2>✨ Ajuste Perfeito e Conclusões Científicas</h2>
+                
+                <h3>1. A Função Matemática</h3>
+                <ul>
+                    <li><b>h₀ = ${h0.toFixed(2)} m:</b> É o Intercepto. Define onde a curva começa (a altura de lançamento).</li>
+                    <li><b>e = ${e.toFixed(2)}:</b> É a Base da Potência. No simulador, ele controla a "curvatura" do decaimento.</li>
+                    <li><b>2n:</b> O expoente é dobrado porque a altura é proporcional ao quadrado da velocidade (v²).</li>
+                </ul>
+
+                <h3>2. O Significado Físico</h3>
+                <ul>
+                    <li>O coeficiente <b>e</b> atua como o <b>Fator de Amortecimento</b> da energia do sistema.</li>
+                    <li><b>Elasticidade:</b> Ele mede o quanto de velocidade a bola "restitui" após o impacto (${ePercent}% neste caso).</li>
+                    <li><b>Dissipação:</b> Como e < 1, parte da energia foi "perdida" para o ambiente na forma de calor e som.</li>
+                </ul>
+
+                <h3>3. Dinâmica dos Ressaltos (Progressão Geométrica)</h3>
+                <ul>
+                    <li>As alturas máximas seguem uma <b>PG</b>: cada novo salto é uma fração constante do anterior.</li>
+                    <li><b>Razão (q):</b> A razão da progressão é <b>q = e² = ${q}</b>.</li>
+                    <li><b>Proporção:</b> A bola retém ${ePercent}% da velocidade, mas apenas <b>${qPercent}% da altura</b> (${e.toFixed(2)}² = ${q}).</li>
+                    <li><b>Regra Prática:</b> Cada novo salto será sempre <b>${qPercent}%</b> do tamanho do salto anterior.</li>
+                </ul>
+            `;
+            conclusionBox.style.display = 'block';
+        } else {
+            conclusionBox.style.display = 'none';
+        }
+
+        const curvePoints = [];
+        let t_env = 0;
+        for (let n = 0; n < 7; n++) {
+            let h_mod = h0 * Math.pow(e, 2 * n);
+            let v_mod = Math.sqrt(2 * g * h_mod);
+            let t_peak = (n === 0) ? 0 : (2 * v_mod / g);
+            t_env += t_peak;
+            curvePoints.push({x: t_env, y: h_mod});
+        }
+
+        if (chart) {
+            chart.data.datasets[1].data = curvePoints;
+            chart.update('none');
+        } else {
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'VidAnalysis', data: expPoints, backgroundColor: 'rgba(26, 115, 232, 0.4)', pointRadius: 3 },
+                        { label: 'Envelope', data: curvePoints, borderColor: '#d93025', borderWidth: 3, borderDash: [6, 4], showLine: true, pointRadius: 0, fill: false, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'linear', min: 0, max: 4.0, title: { display: true, text: 'Tempo (s)' } },
+                        y: { min: 0, max: 2.0, title: { display: true, text: 'Altura (m)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    }
+
+    document.querySelectorAll('input').forEach(s => s.addEventListener('input', update));
+    update();
+</script>
+</body>
+</html>
